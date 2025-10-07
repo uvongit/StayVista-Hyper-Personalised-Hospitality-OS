@@ -1,0 +1,94 @@
+.featured {
+  flex: 2;
+  padding: 24px;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  .top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--color-text-secondary);
+
+    .title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+  }
+
+  .bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+    text-align: center;
+
+    .featuredChart {
+      width: 140px;
+      height: 140px;
+    }
+
+    .title {
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      font-size: 15px;
+    }
+
+    .amount {
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+    }
+
+    .desc {
+      font-weight: 400;
+      font-size: 13px;
+      color: var(--color-text-muted);
+      max-width: 260px;
+    }
+
+    .summary {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+
+      .item {
+        flex: 1;
+        padding: 14px;
+        border-radius: 12px;
+        background: rgba(148, 163, 184, 0.08);
+
+        .itemTitle {
+          font-size: 14px;
+          color: var(--color-text-secondary);
+          font-weight: 600;
+        }
+
+        .itemResult {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          margin-top: 12px;
+          font-size: 14px;
+          font-weight: 600;
+
+          &.positive {
+            color: var(--color-success);
+          }
+
+          &.negative {
+            color: var(--color-danger);
+          }
+        }
+      }
+    }
+  }
+}

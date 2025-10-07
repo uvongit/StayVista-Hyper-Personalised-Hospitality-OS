@@ -1,0 +1,98 @@
+.register {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(14, 165, 233, 0.08)), var(--color-background);
+  padding: 24px;
+}
+
+.rContainer {
+  width: min(440px, 90vw);
+  background: var(--color-surface);
+  border-radius: 22px;
+  padding: 42px 38px;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+
+  h2 {
+    text-align: center;
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--color-text-primary);
+  }
+
+  .subtitle {
+    text-align: center;
+    font-size: 14px;
+    color: var(--color-text-muted);
+  }
+
+  form {
+    display: grid;
+    gap: 14px;
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="tel"] {
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--color-border);
+      background: #fff;
+    }
+
+    .checkboxRow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--color-text-secondary);
+
+      input {
+        width: auto;
+      }
+    }
+
+    button {
+      width: 100%;
+      font-size: 15px;
+      margin-top: 6px;
+    }
+  }
+
+  .errorMessage,
+  .successMessage {
+    font-size: 13px;
+    text-align: center;
+    padding: 10px 14px;
+    border-radius: 12px;
+  }
+
+  .errorMessage {
+    background: rgba(220, 38, 38, 0.08);
+    color: var(--color-danger);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+  }
+
+  .successMessage {
+    background: rgba(22, 163, 74, 0.12);
+    color: var(--color-success);
+    border: 1px solid rgba(22, 163, 74, 0.2);
+  }
+
+  .footer {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+
+    a {
+      font-weight: 600;
+    }
+  }
+}

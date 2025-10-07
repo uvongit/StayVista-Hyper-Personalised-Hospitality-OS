@@ -1,0 +1,203 @@
+.datatable {
+  min-height: 540px;
+  padding: 28px;
+  background: var(--color-surface);
+  border-radius: 22px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: 0 28px 48px rgba(15, 23, 42, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  .datatableTitle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+
+    &__content {
+      display: grid;
+      gap: 8px;
+
+      h2 {
+        margin: 0;
+        font-size: clamp(22px, 3vw, 28px);
+        font-weight: 700;
+        color: var(--color-text-primary);
+      }
+
+      p {
+        margin: 0;
+        font-size: 14px;
+        color: rgba(15, 23, 42, 0.65);
+        max-width: 580px;
+        line-height: 1.6;
+      }
+    }
+
+    &__eyebrow {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.24em;
+      color: rgba(37, 99, 235, 0.78);
+    }
+
+    .link {
+      padding: 10px 18px;
+      font-size: 14px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 148px;
+    }
+  }
+
+  .datatableError {
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(220, 38, 38, 0.08);
+    color: var(--color-danger);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    font-size: 14px;
+  }
+
+  .datagrid {
+    flex: 1;
+    border: none;
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    background: rgba(248, 250, 252, 0.6);
+    border-radius: 16px;
+
+    .MuiDataGrid-columnHeaders {
+      background: rgba(148, 163, 184, 0.16);
+      color: var(--color-text-secondary);
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      border-top-left-radius: 16px;
+      border-top-right-radius: 16px;
+    }
+
+    .MuiDataGrid-row {
+      &:hover {
+        background: rgba(37, 99, 235, 0.04);
+      }
+    }
+
+    .MuiDataGrid-cell {
+      border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+    }
+  }
+
+  .cellWithImg {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .cellImg {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+    }
+  }
+
+  .cellWithStatus {
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: capitalize;
+
+    &.active {
+      background: rgba(34, 197, 94, 0.12);
+      color: var(--color-success);
+    }
+    &.pending {
+      background: rgba(245, 158, 11, 0.12);
+      color: var(--color-warning);
+    }
+    &.passive {
+      background: rgba(220, 38, 38, 0.12);
+      color: var(--color-danger);
+    }
+  }
+
+  .cellAction {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .viewButton,
+    .deleteButton {
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform var(--transition-base), box-shadow var(--transition-base);
+      border: none;
+      background: none;
+    }
+
+    .viewButton {
+      background: rgba(37, 99, 235, 0.12);
+      color: var(--color-primary);
+    }
+
+    .deleteButton {
+      background: rgba(220, 38, 38, 0.12);
+      color: var(--color-danger);
+    }
+
+    .viewButton:hover,
+    .deleteButton:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+  }
+
+  .datatableToast {
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 420px;
+    line-height: 1.4;
+
+    &--success {
+      background: rgba(34, 197, 94, 0.12);
+      color: var(--color-success);
+      border: 1px solid rgba(34, 197, 94, 0.28);
+    }
+
+    &--error {
+      background: rgba(220, 38, 38, 0.12);
+      color: var(--color-danger);
+      border: 1px solid rgba(220, 38, 38, 0.24);
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .datatable {
+    padding: 22px;
+
+    .datatableTitle {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 14px;
+
+      .link {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+}

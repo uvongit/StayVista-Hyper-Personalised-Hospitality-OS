@@ -1,39 +1,103 @@
-import useFetch from "../../hooks/useFetch";
+import { useEffect, useMemo, useState } from "react";
+import { getHotelCountsByType } from "../../api/hotels";
 import "./propertyList.css";
 
-const PropertyList = () => {
-  const { data, loading, error } = useFetch("/hotels/countByType");
+const gallery = [
+  "https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=1200&q=80",
+  "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80",
+  "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=80",
+  "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=1200&q=80",
+  "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=1200&q=80",
+];
 
-  const images = [
-    "https://cf.bstatic.com/xdata/images/xphoto/square300/57584488.webp?k=bf724e4e9b9b75480bbe7fc675460a089ba6414fe4693b83ea3fdd8e938832a6&o=",
-    "https://cf.bstatic.com/static/img/theme-index/carousel_320x240/card-image-apartments_300/9f60235dc09a3ac3f0a93adbc901c61ecd1ce72e.jpg",
-    "https://cf.bstatic.com/static/img/theme-index/carousel_320x240/bg_resorts/6f87c6143fbd51a0bb5d15ca3b9cf84211ab0884.jpg",
-    "https://cf.bstatic.com/static/img/theme-index/carousel_320x240/card-image-villas_300/dd0d7f8202676306a661aa4f0cf1ffab31286211.jpg",
-    "https://cf.bstatic.com/static/img/theme-index/carousel_320x240/card-image-chalet_300/8ee014fcc493cb3334e25893a1dee8c6d36ed0ba.jpg",
-  ];
+const displayNames = {
+  hotel: "Boutique hotels",
+  apartment: "Designer apartments",
+  resort: "Coastal resorts",
+  villa: "Private villas",
+  cabin: "Mountain cabins",
+  guesthouse: "Guest houses",
+};
+
+const PropertyList = () => {
+  const [counts, setCounts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchCounts = async () => {
+      setLoading(true);
+      try {
+        const data = await getHotelCountsByType();
+        if (!isMounted) return;
+        setCounts(Array.isArray(data) ? data : []);
+        setError(null);
+      } catch (err) {
+        if (!isMounted) return;
+        setError(err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchCounts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const propertyTypes = useMemo(() => {
+    if (!counts.length) return [];
+    return counts.map((item, index) => {
+      const typeKey = item?.type?.toLowerCase();
+      return {
+        ...item,
+        displayName: displayNames[typeKey] ?? item?.type ?? "Unique stays",
+        image: gallery[index % gallery.length],
+      };
+    });
+  }, [counts]);
+
   return (
-    <div className="pList">
+    <section className="property-list container">
       {loading ? (
-        "loading"
+        <div className="property-list__status">Loading property collections…</div>
+      ) : error ? (
+        <div className="property-list__status property-list__status--error">
+          We couldn’t load property types. Please refresh to try again.
+        </div>
+      ) : propertyTypes.length === 0 ? (
+        <div className="property-list__status">No property collections found.</div>
       ) : (
-        <>
-          {data &&
-            images.map((img,i) => (
-              <div className="pListItem" key={i}>
+        <div className="property-list__grid">
+          {propertyTypes.map((item) => (
+            <article className="property-card" key={item.type}>
+              <div className="property-card__media">
                 <img
-                  src={img}
-                  alt=""
-                  className="pListImg"
+                  src={item.image}
+                  alt={`${item.displayName}`}
+                  className="property-card__image"
                 />
-                <div className="pListTitles">
-                  <h1>{data[i]?.type}</h1>
-                  <h2>{data[i]?.count} {data[i]?.type}</h2>
-                </div>
+                <span className="property-card__pill">
+                  {item.count ?? 0}+ curated stays
+                </span>
               </div>
-            ))}
-        </>
+              <div className="property-card__content">
+                <h3 className="property-card__title">{item.displayName}</h3>
+                <p className="property-card__meta">
+                  Explore {item.count ?? 0} {item.type?.toLowerCase() ?? "homes"} designed for restorative escapes.
+                </p>
+              </div>
+            </article>
+          ))}
+        </div>
       )}
-    </div>
+    </section>
   );
 };
 

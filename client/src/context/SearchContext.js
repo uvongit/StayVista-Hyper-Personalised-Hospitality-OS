@@ -54,7 +54,3 @@ export const SearchContextProvider = ({ children }) => {
 
 
 
-
-
-
-

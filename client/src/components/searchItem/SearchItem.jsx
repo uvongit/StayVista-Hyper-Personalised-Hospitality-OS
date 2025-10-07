@@ -1,10 +1,20 @@
 import { Link } from "react-router-dom";
+import ImageCarousel from "../carousel/ImageCarousel";
 import "./searchItem.css";
 
 const SearchItem = ({ item }) => {
+  const images = Array.isArray(item?.photos) && item.photos.length ? item.photos.filter(Boolean) : [];
+
   return (
     <div className="searchItem">
-      <img src={item.photos[0]} alt="" className="siImg" />
+      <div className="siImgWrapper">
+        <ImageCarousel
+          images={images}
+          altPrefix={item.name}
+          className="siCarousel"
+          aspect="1 / 1"
+        />
+      </div>
       <div className="siDesc">
         <h1 className="siTitle">{item.name}</h1>
         <span className="siDistance">{item.distance}m from center</span>
@@ -24,7 +34,7 @@ const SearchItem = ({ item }) => {
           <button>{item.rating}</button>
         </div>}
         <div className="siDetailTexts">
-          <span className="siPrice">${item.cheapestPrice}</span>
+          <span className="siPrice">₹{item.cheapestPrice}</span>
           <span className="siTaxOp">Includes taxes and fees</span>
           <Link to={`/hotels/${item._id}`}>
           <button className="siCheckButton">See availability</button>

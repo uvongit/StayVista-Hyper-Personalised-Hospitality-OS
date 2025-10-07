@@ -1,5 +1,5 @@
 {
-  "name": "bookingapp",
+  "name": "api-stayvista",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -12,12 +12,15 @@
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "cloudinary": "^1.41.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.0.0",
     "express": "^4.18.1",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^6.3.1",
-    "nodemon": "^2.0.16"
+    "multer": "^1.4.5-lts.1",
+    "nodemon": "^2.0.16",
+    "streamifier": "^0.1.1"
   }
 }

@@ -1,0 +1,102 @@
+@import url("https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=General+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --shadow-sm: 0 4px 12px rgba(15, 23, 42, 0.08);
+    --shadow-md: 0 18px 32px rgba(15, 23, 42, 0.12);
+    --radius-sm: 10px;
+    --radius-md: 16px;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+    overflow-x: hidden;
+  }
+
+  body {
+    @apply m-0 bg-background font-sans text-base text-text-primary antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Clash Display", "General Sans", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+    @apply text-text-primary tracking-tight;
+  }
+
+  h1 {
+    @apply text-4xl font-semibold;
+  }
+
+  h2 {
+    @apply text-3xl font-semibold;
+  }
+
+  h3 {
+    @apply text-2xl font-semibold;
+  }
+
+  h4 {
+    @apply text-xl font-medium;
+  }
+
+  p {
+    @apply text-base leading-relaxed text-text-secondary;
+  }
+
+  strong {
+    @apply font-semibold text-text-primary;
+  }
+
+  a {
+    @apply text-primary transition-colors duration-200;
+  }
+
+  a:hover {
+    @apply text-primary-dark;
+  }
+
+  button {
+    @apply font-sans font-medium;
+  }
+
+  code,
+  pre {
+    @apply font-mono;
+  }
+}
+
+@layer components {
+  .app {
+    @apply min-h-screen bg-background text-text-primary transition-colors duration-200 ease-in-out;
+  }
+
+  .surface-card {
+    @apply rounded-[10px] border border-border bg-surface shadow-soft;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply bg-green-100 text-success;
+  }
+
+  .badge-warning {
+    @apply bg-amber-100 text-warning;
+  }
+
+  .badge-danger {
+    @apply bg-red-100 text-danger;
+  }
+}

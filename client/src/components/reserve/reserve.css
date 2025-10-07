@@ -1,78 +1,340 @@
-.reserve {
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.418);
+.reserve-modal {
   position: fixed;
-  top: 0;
-  left: 0;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 32px;
+  background: rgba(15, 23, 42, 0.65);
+  z-index: 1200;
+  backdrop-filter: blur(6px);
 }
 
-.rContainer {
-  background-color: white;
-  padding: 20px;
+.reserve-modal__dialog {
   position: relative;
+  width: min(920px, 100%);
+  max-height: min(90vh, 820px);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 28px;
+  box-shadow: 0 40px 90px rgba(15, 23, 42, 0.25);
+  display: flex;
+  flex-direction: column;
 }
 
-.rClose {
+.reserve-modal__close {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: 20px;
+  right: 24px;
+  border: none;
+  background: none;
+  font-size: 28px;
+  color: #1e293b;
   cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
 }
 
-.rItem {
+.reserve-modal__close:hover {
+  opacity: 1;
+}
+
+.reserve-modal__header {
+  padding: 32px;
+  padding-right: 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(59, 130, 246, 0.08));
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.reserve-modal__eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 11px;
+  color: #2563eb;
+}
+
+.reserve-modal__title {
+  margin: 0;
+  font-size: 26px;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+.reserve-modal__subtitle {
+  margin: 0;
+  color: #475569;
+}
+
+.reserve-modal__content {
+  padding: 24px 32px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.reserve-modal__state {
+  padding: 28px;
+  border-radius: 18px;
+  background: rgba(248, 250, 252, 0.9);
+  text-align: center;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.reserve-modal__state--error {
+  background: rgba(254, 226, 226, 0.9);
+  color: #b91c1c;
+}
+
+.reserve-room-card {
+  border-radius: 22px;
+  padding: 22px 24px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.reserve-room-card__header {
   display: flex;
   align-items: center;
-  gap: 50px;
-  padding: 20px;
+  justify-content: space-between;
+  gap: 18px;
 }
 
-.rInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+.reserve-room-card__header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #0f172a;
 }
 
-.rTitle {
-  font-weight: 500;
+.reserve-room-card__header span {
+  font-weight: 700;
+  color: #2563eb;
 }
 
-.rDesc {
-  font-weight: 300;
+.reserve-room-card__desc {
+  margin: 0;
+  color: #475569;
+  line-height: 1.6;
 }
 
-.rMax {
-  font-size: 12px;
-}
-
-.rPrice {
-  font-weight: 500;
-}
-
-.rSelectRooms{
+.reserve-room-card__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
-  font-size: 8px;
-  color: gray;
+  gap: 12px;
+  font-size: 13px;
+  color: #334155;
 }
 
-.room{
-  display: flex;
-  flex-direction: column;
+.reserve-room-card__options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
 }
 
-.rButton {
-  border: none;
-  padding: 10px 20px;
-  background-color: #0071c2;
-  color: white;
-  font-weight: bold;
+.reserve-room-card__option {
+  position: relative;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  display: grid;
+  gap: 8px;
   cursor: pointer;
-  border-radius: 5px;
-  width: 100%;
-  margin-top: 20px;
+  background: #fff;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.reserve-room-card__option input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.reserve-room-card__option:hover {
+  border-color: rgba(37, 99, 235, 0.6);
+  box-shadow: 0 12px 26px rgba(37, 99, 235, 0.12);
+}
+
+.reserve-room-card__option--selected {
+  border-color: rgba(37, 99, 235, 0.8);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(59, 130, 246, 0.08));
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.18);
+}
+
+.reserve-room-card__option input:checked + .reserve-room-card__label {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.reserve-room-card__label {
+  font-weight: 500;
+  color: #0f172a;
+}
+
+.reserve-room-card__availability {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #16a34a;
+}
+
+.reserve-room-card__availability--full {
+  color: #b91c1c;
+}
+
+.reserve-room-card__option--disabled {
+  pointer-events: none;
+  opacity: 0.68;
+  background: #f1f5f9;
+  border-style: dashed;
+}
+
+.reserve-modal__banner {
+  margin: 0 32px 16px;
+  border-radius: 16px;
+  padding: 14px 18px;
+  font-weight: 600;
+}
+
+.reserve-modal__banner--error {
+  background: rgba(254, 226, 226, 0.9);
+  color: #b91c1c;
+}
+
+.reserve-modal__banner--success {
+  background: rgba(187, 247, 208, 0.85);
+  color: #15803d;
+}
+
+.reserve-modal__footer {
+  margin: 0 32px 32px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.reserve-modal__summary span {
+  font-size: 14px;
+  color: #475569;
+}
+
+.reserve-modal__summary strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 22px;
+  color: #0f172a;
+}
+
+.reserve-modal__button {
+  border: none;
+  border-radius: 999px;
+  padding: 12px 28px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.reserve-modal__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  box-shadow: none;
+}
+
+.reserve-modal__button:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 30px rgba(37, 99, 235, 0.28);
+}
+
+@media (max-width: 768px) {
+  .reserve-modal {
+    padding: 16px;
+  }
+
+  .reserve-modal__dialog {
+    border-radius: 20px;
+  }
+
+  .reserve-modal__header {
+    padding: 24px;
+    padding-right: 64px;
+  }
+
+  .reserve-modal__content {
+    padding: 20px 24px;
+  }
+
+  .reserve-modal__footer {
+    margin: 0 24px 24px;
+  }
+}
+
+@media (max-width: 520px) {
+  .reserve-modal {
+    padding: 12px;
+  }
+
+  .reserve-modal__dialog {
+    max-height: 95vh;
+    border-radius: 18px;
+  }
+
+  .reserve-modal__header {
+    padding: 18px;
+    padding-right: 52px;
+  }
+
+  .reserve-modal__title {
+    font-size: 22px;
+  }
+
+  .reserve-modal__content {
+    padding: 16px 18px;
+  }
+
+  .reserve-room-card {
+    padding: 18px 20px;
+    border-radius: 18px;
+  }
+
+  .reserve-room-card__header h3 {
+    font-size: 16px;
+  }
+
+  .reserve-room-card__options {
+    grid-template-columns: 1fr;
+  }
+
+  .reserve-modal__banner {
+    margin: 0 18px 14px;
+  }
+
+  .reserve-modal__footer {
+    margin: 0 18px 18px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .reserve-modal__summary {
+    width: 100%;
+  }
+
+  .reserve-modal__button {
+    width: 100%;
+    text-align: center;
+  }
 }

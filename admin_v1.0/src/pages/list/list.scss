@@ -1,0 +1,15 @@
+.list {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  overflow: hidden;
+
+  .listContainer {
+    flex: 6;
+    padding: clamp(20px, 3vw, 32px);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    min-width: 0;
+  }
+}

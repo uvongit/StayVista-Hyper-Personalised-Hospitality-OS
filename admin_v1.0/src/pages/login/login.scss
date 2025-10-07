@@ -1,0 +1,63 @@
+.login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(14, 165, 233, 0.08)), var(--color-background);
+  padding: 24px;
+}
+
+.lContainer {
+  width: 380px;
+  background: var(--color-surface);
+  border-radius: 18px;
+  padding: 36px 34px;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  h2 {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    text-align: center;
+  }
+
+  .subtitle {
+    text-align: center;
+    font-size: 14px;
+    color: var(--color-text-muted);
+    margin-bottom: 6px;
+  }
+
+  .lInput {
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--color-border);
+    background: #fff;
+  }
+
+  .lButton {
+    width: 100%;
+    font-size: 15px;
+  }
+
+  span {
+    font-size: 13px;
+    color: var(--color-danger);
+  }
+
+  .registerLink {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+
+    a {
+      font-weight: 600;
+    }
+  }
+}

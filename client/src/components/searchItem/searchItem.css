@@ -1,17 +1,23 @@
 .searchItem {
-  border: 1px solid lightgray;
-  padding: 10px;
-  border-radius: 5px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  padding: 18px;
+  border-radius: 20px;
   display: flex;
   justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 20px;
+  gap: 24px;
+  margin-bottom: 24px;
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.96), rgba(241, 245, 249, 0.96));
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.08);
 }
 
-.siImg {
-  width: 200px;
-  height: 200px;
-  object-fit: cover;
+.siImgWrapper {
+  width: 220px;
+  flex-shrink: 0;
+}
+
+.siCarousel {
+  border-radius: 18px;
+  height: 100%;
 }
 
 .siDesc {
@@ -106,4 +112,74 @@
   border: none;
   cursor: pointer;
   border-radius: 5px;
+}
+
+@media (max-width: 768px) {
+  .searchItem {
+    flex-direction: column;
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .siImgWrapper {
+    width: 100%;
+  }
+
+  .siCarousel {
+    height: 200px;
+  }
+
+  .siDesc {
+    gap: 8px;
+  }
+
+  .siDetails {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .siDetailTexts {
+    text-align: left;
+  }
+
+  .siCheckButton {
+    padding: 10px 20px;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 520px) {
+  .searchItem {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .siCarousel {
+    height: 180px;
+  }
+
+  .siTitle {
+    font-size: 18px;
+  }
+
+  .siPrice {
+    font-size: 20px;
+  }
+
+  .siDetails {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .siRating {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .siCheckButton {
+    width: 100%;
+    text-align: center;
+  }
 }

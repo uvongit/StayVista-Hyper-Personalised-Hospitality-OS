@@ -1,0 +1,20 @@
+.chart {
+  flex: 4;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+  padding: 24px;
+  color: var(--color-text-secondary);
+
+  .title {
+    margin-bottom: 24px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  .chartGrid {
+    stroke: rgba(148, 163, 184, 0.4);
+  }
+}

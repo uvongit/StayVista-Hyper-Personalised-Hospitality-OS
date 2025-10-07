@@ -1,0 +1,83 @@
+.app.dark {
+  --color-background: #0b1120;
+  --color-surface: #111827;
+  --color-border: rgba(148, 163, 184, 0.16);
+  --color-text-primary: #e2e8f0;
+  --color-text-secondary: #cbd5f5;
+  --color-text-muted: #94a3b8;
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-success: #4ade80;
+  --color-warning: #fbbf24;
+  --color-danger: #f87171;
+  --color-info: #38bdf8;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+
+  .navbar {
+    background: rgba(15, 23, 42, 0.9);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+
+    .search {
+      background: rgba(148, 163, 184, 0.14);
+
+      &:focus-within {
+        background: rgba(37, 99, 235, 0.18);
+      }
+
+      .icon {
+        color: var(--color-text-muted);
+      }
+    }
+  }
+
+  .sidebar {
+    background: rgba(15, 23, 42, 0.85);
+    border-right: 1px solid rgba(148, 163, 184, 0.18);
+
+    hr {
+      border-top: 1px dashed rgba(148, 163, 184, 0.2);
+    }
+
+    ul li {
+      &:hover {
+        background: rgba(59, 130, 246, 0.18);
+      }
+
+      .icon {
+        color: var(--color-text-muted);
+      }
+    }
+  }
+
+  .datatable,
+  .widget,
+  .featured,
+  .chart,
+  .table,
+  .listContainer,
+  .newContainer .top,
+  .newContainer .bottom,
+  .register .rContainer,
+  .lContainer {
+    background: rgba(17, 24, 39, 0.92);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    box-shadow: 0 18px 32px rgba(2, 6, 23, 0.55);
+  }
+
+  .datatable .datagrid .MuiDataGrid-columnHeaders {
+    background: rgba(148, 163, 184, 0.12);
+  }
+
+  input,
+  select,
+  textarea {
+    background: rgba(30, 41, 59, 0.8);
+    color: var(--color-text-primary);
+    border-color: rgba(148, 163, 184, 0.25);
+
+    &::placeholder {
+      color: var(--color-text-muted);
+    }
+  }
+}

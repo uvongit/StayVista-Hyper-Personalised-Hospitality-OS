@@ -1,0 +1,121 @@
+.table {
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+  padding: 20px;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+
+    thead tr {
+      background: rgba(148, 163, 184, 0.1);
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.36em;
+      color: rgba(15, 23, 42, 0.6);
+      font-weight: 600;
+    }
+
+    th,
+    td {
+      padding: 16px 14px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+      text-align: left;
+      font-size: 14px;
+      color: var(--color-text-secondary);
+      vertical-align: middle;
+    }
+  }
+
+  .tableCell--mono {
+    font-family: "Fira Code", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+      monospace;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    color: rgba(15, 23, 42, 0.68);
+  }
+
+  .tableCellMain {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .primaryText {
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+
+    .secondaryText {
+      font-size: 12px;
+      color: rgba(15, 23, 42, 0.55);
+    }
+  }
+
+  .methodChip,
+  .statusChip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .methodChip {
+    background: rgba(59, 130, 246, 0.12);
+    color: rgba(37, 99, 235, 0.92);
+
+    &.method-manual {
+      background: rgba(148, 163, 184, 0.16);
+      color: rgba(71, 85, 105, 0.95);
+    }
+  }
+
+  .statusChip {
+    &.status-captured,
+    &.status-success,
+    &.status-completed {
+      background: rgba(34, 197, 94, 0.12);
+      color: rgba(22, 163, 74, 0.95);
+    }
+
+    &.status-pending,
+    &.status-processing {
+      background: rgba(245, 158, 11, 0.16);
+      color: rgba(180, 83, 9, 0.92);
+    }
+
+    &.status-refunded {
+      background: rgba(10, 132, 255, 0.12);
+      color: rgba(37, 99, 235, 0.95);
+    }
+
+    &.status-failed,
+    &.status-error {
+      background: rgba(248, 113, 113, 0.16);
+      color: rgba(185, 28, 28, 0.95);
+    }
+  }
+
+  .tableRow--message {
+    td {
+      text-align: center;
+      font-weight: 500;
+      color: rgba(15, 23, 42, 0.6);
+      padding: 32px 16px;
+    }
+
+    &.tableRow--error td {
+      color: rgba(185, 28, 28, 0.9);
+    }
+
+    &.tableRow--empty td {
+      color: rgba(15, 23, 42, 0.45);
+    }
+  }
+}

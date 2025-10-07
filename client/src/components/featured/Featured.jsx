@@ -1,52 +1,68 @@
-import useFetch from "../../hooks/useFetch";
+import { useEffect, useState } from "react";
+import { getHotelCountsByCity } from "../../api/hotels";
 import "./featured.css";
 
 const Featured = () => {
-  const { data, loading, error } = useFetch(
-    "/hotels/countByCity?cities=berlin,madrid,london"
-  );
+  const [counts, setCounts] = useState([0, 0, 0]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchCounts = async () => {
+      setLoading(true);
+      try {
+        const data = await getHotelCountsByCity(["berlin", "madrid", "london"]);
+        if (!isMounted) return;
+        setCounts(Array.isArray(data) ? data : []);
+        setError(null);
+      } catch (err) {
+        if (!isMounted) return;
+        setError(err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+    fetchCounts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
-    <div className="featured">
+    <div className="featured container">
       {loading ? (
-        "Loading please wait"
+        <div className="featured__loading">Loading curated destinations…</div>
+      ) : error ? (
+        <div className="featured__error">We couldn’t load featured destinations. Please try again shortly.</div>
       ) : (
-        <>
-          <div className="featuredItem">
-            <img
-              src="https://cf.bstatic.com/xdata/images/city/max500/957801.webp?k=a969e39bcd40cdcc21786ba92826063e3cb09bf307bcfeac2aa392b838e9b7a5&o="
-              alt=""
-              className="featuredImg"
-            />
-            <div className="featuredTitles">
-              <h1>Berlin</h1>
-              <h2>{data[0]} properties</h2>
-            </div>
-          </div>
-
-          <div className="featuredItem">
-            <img
-              src="https://cf.bstatic.com/xdata/images/city/max500/690334.webp?k=b99df435f06a15a1568ddd5f55d239507c0156985577681ab91274f917af6dbb&o="
-              alt=""
-              className="featuredImg"
-            />
-            <div className="featuredTitles">
-              <h1>Madrid</h1>
-              <h2>{data[1]} properties</h2>
-            </div>
-          </div>
-          <div className="featuredItem">
-            <img
-              src="https://cf.bstatic.com/xdata/images/city/max500/689422.webp?k=2595c93e7e067b9ba95f90713f80ba6e5fa88a66e6e55600bd27a5128808fdf2&o="
-              alt=""
-              className="featuredImg"
-            />
-            <div className="featuredTitles">
-              <h1>London</h1>
-              <h2>{data[2]} properties</h2>
-            </div>
-          </div>
-        </>
+        <div className="featured__grid">
+          {["Berlin", "Madrid", "London"].map((city, index) => (
+            <article className="featured__card" key={city}>
+              <div className="featured__overlay" />
+              <img
+                src={
+                  [
+                    "https://images.unsplash.com/photo-1560969184-10fe8719e047?w=1200&q=80",
+                    "https://images.unsplash.com/photo-1543783207-ec64e4d95325?w=1200&q=80",
+                    "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1200&q=80",
+                  ][index]
+                }
+                alt={`${city} skyline`}
+                className="featured__image"
+              />
+              <div className="featured__content">
+                <span className="featured__eyebrow">City spotlight</span>
+                <h3 className="featured__title">{city}</h3>
+                <p className="featured__meta">{counts[index] ?? 0} curated stays</p>
+              </div>
+            </article>
+          ))}
+        </div>
       )}
     </div>
   );

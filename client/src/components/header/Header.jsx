@@ -1,23 +1,19 @@
-import {
-  faBed,
-  faCalendarDays,
-  faCar,
-  faPerson,
-  faPlane,
-  faTaxi,
-} from "@fortawesome/free-solid-svg-icons";
+import { faBed, faCalendarDays, faPerson } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import "./header.css";
 import { DateRange } from "react-date-range";
-import { useContext, useState } from "react";
-import "react-date-range/dist/styles.css"; // main css file
-import "react-date-range/dist/theme/default.css"; // theme css file
+import { useContext, useMemo, useState } from "react";
+import "react-date-range/dist/styles.css";
+import "react-date-range/dist/theme/default.css";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { SearchContext } from "../../context/SearchContext";
 import { AuthContext } from "../../context/AuthContext";
+import HeroNav from "./HeroNav";
 
-const Header = ({ type }) => {
+const listHighlights = ["Handpicked stays", "Transparent pricing", "Travel concierge"];
+
+const Header = ({ type, onPlanClick, variant }) => {
   const [destination, setDestination] = useState("");
   const [openDate, setOpenDate] = useState(false);
   const [dates, setDates] = useState([
@@ -36,177 +32,205 @@ const Header = ({ type }) => {
 
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const { dispatch } = useContext(SearchContext);
 
+  const dateLabel = useMemo(
+    () =>
+      `${format(dates[0].startDate, "MMM dd, yyyy")} – ${format(
+        dates[0].endDate,
+        "MMM dd, yyyy"
+      )}`,
+    [dates]
+  );
+
+  const optionsLabel = useMemo(
+    () =>
+      `${options.adult} adult${options.adult > 1 ? "s" : ""} · ${
+        options.children
+      } children · ${options.room} room${options.room > 1 ? "s" : ""}`,
+    [options]
+  );
 
   const handleOption = (name, operation) => {
     setOptions((prev) => {
+      const nextValue =
+        operation === "i" ? prev[name] + 1 : Math.max(0, prev[name] - 1);
       return {
         ...prev,
-        [name]: operation === "i" ? options[name] + 1 : options[name] - 1,
+        [name]: nextValue,
       };
     });
   };
 
-  const { dispatch } = useContext(SearchContext);
-
   const handleSearch = () => {
-    dispatch({ type: "NEW_SEARCH", payload: { destination, dates, options } });
+    const payload = {
+      city: destination,
+      destination,
+      dates,
+      options,
+    };
+    dispatch({ type: "NEW_SEARCH", payload });
     navigate("/hotels", { state: { destination, dates, options } });
   };
 
+  const isList = type === "list";
+
+  const isMinimal = variant === "minimal";
+
   return (
-    <div className="header">
-      <div
-        className={
-          type === "list" ? "headerContainer listMode" : "headerContainer"
-        }
-      >
-        <div className="headerList">
-          <div className="headerListItem active">
-            <FontAwesomeIcon icon={faBed} />
-            <span>Stays</span>
-          </div>
-          <div className="headerListItem">
-            <FontAwesomeIcon icon={faPlane} />
-            <span>Flights</span>
-          </div>
-          <div className="headerListItem">
-            <FontAwesomeIcon icon={faCar} />
-            <span>Car rentals</span>
-          </div>
-          <div className="headerListItem">
-            <FontAwesomeIcon icon={faBed} />
-            <span>Attractions</span>
-          </div>
-          <div className="headerListItem">
-            <FontAwesomeIcon icon={faTaxi} />
-            <span>Airport taxis</span>
-          </div>
-        </div>
-        {type !== "list" && (
-          <>
-            <h1 className="headerTitle">
-              A lifetime of discounts? It's Genius.
-            </h1>
-            <p className="headerDesc">
-              Get rewarded for your travels – unlock instant savings of 10% or
-              more with a free Lamabooking account
-            </p>
-            {!user && <button className="headerBtn">Sign in / Register</button>}
-            <div className="headerSearch">
-              <div className="headerSearchItem">
-                <FontAwesomeIcon icon={faBed} className="headerIcon" />
-                <input
-                  type="text"
-                  placeholder="Where are you going?"
-                  className="headerSearchInput"
-                  onChange={(e) => setDestination(e.target.value)}
-                />
+    <section className={`hero ${isList ? "hero--compact" : ""} ${isMinimal ? "hero--minimal" : ""}`}>
+      <div className="hero__background" aria-hidden="true" />
+      <div className={`hero__content container ${isList ? "hero__content--wide" : "hero__content--compact"}`}>
+        {isList ? (
+          <div className="hero__list-surface">
+            <div className="hero__list-top">
+              <div className="hero__list-heading">
+                <span className="hero__list-eyebrow">Curated getaways</span>
+                <h1 className="hero__list-title">Signature stays crafted for discerning journeys</h1>
+                <p className="hero__list-subtitle">
+                  Explore private villas, design-forward hotels, and concierge-led residences across our global collection.
+                </p>
+                <div className="hero__list-highlights">
+                  {listHighlights.map((highlight) => (
+                    <span className="hero__list-highlight" key={highlight}>
+                      {highlight}
+                    </span>
+                  ))}
+                </div>
               </div>
-              <div className="headerSearchItem">
-                <FontAwesomeIcon icon={faCalendarDays} className="headerIcon" />
-                <span
-                  onClick={() => setOpenDate(!openDate)}
-                  className="headerSearchText"
-                >{`${format(dates[0].startDate, "MM/dd/yyyy")} to ${format(
-                  dates[0].endDate,
-                  "MM/dd/yyyy"
-                )}`}</span>
-                {openDate && (
+              {onPlanClick ? (
+                <button type="button" className="hero__list-plan" onClick={onPlanClick}>
+                  <span>Plan your stay</span>
+                  <span aria-hidden="true" className="hero__list-plan-icon">↓</span>
+                </button>
+              ) : null}
+            </div>
+            <HeroNav variant="list" />
+          </div>
+        ) : (
+          <>
+            <div className="hero__top">
+              <div className="hero__meta">
+                <span className="badge">Curated getaways</span>
+                <div className="chip-set hero__chip-set">
+                  <span className="chip">Handpicked stays</span>
+                  <span className="chip">Transparent pricing</span>
+                  <span className="chip">Travel concierge</span>
+                </div>
+              </div>
+              <h1 className="hero__title">Welcome to StayVista</h1>
+              <p className="hero__subtitle">
+                Discover boutique stays, luxury villas, and immersive experiences tailored to the way you travel.
+              </p>
+              {!user && (
+                <div className="hero__actions">
+                  <button type="button" className="btn-primary">
+                    Unlock member rates
+                  </button>
+                  <button type="button" className="btn-outline">
+                    Explore benefits
+                  </button>
+                </div>
+              )}
+            </div>
+            <HeroNav />
+            <div className="hero__search shadow-card">
+              <div className="hero__search-grid">
+                <label className="hero__field">
+                  <span className="hero__field-label">Destination</span>
+                  <div className="hero__field-input">
+                    <FontAwesomeIcon icon={faBed} className="hero__field-icon" />
+                    <input
+                      type="text"
+                      placeholder="Where are you going?"
+                      value={destination}
+                      onChange={(e) => setDestination(e.target.value)}
+                    />
+                  </div>
+                </label>
+                <button
+                  type="button"
+                  className="hero__field hero__field--button"
+                  onClick={() => setOpenDate((prev) => !prev)}
+                >
+                  <span className="hero__field-label">Dates</span>
+                  <div className="hero__field-input">
+                    <FontAwesomeIcon icon={faCalendarDays} className="hero__field-icon" />
+                    <span>{dateLabel}</span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  className="hero__field hero__field--button"
+                  onClick={() => setOpenOptions((prev) => !prev)}
+                >
+                  <span className="hero__field-label">Guests & rooms</span>
+                  <div className="hero__field-input">
+                    <FontAwesomeIcon icon={faPerson} className="hero__field-icon" />
+                    <span>{optionsLabel}</span>
+                  </div>
+                </button>
+                <div className="hero__cta">
+                  <button type="button" className="btn-primary hero__submit" onClick={handleSearch}>
+                    Search stays
+                  </button>
+                </div>
+              </div>
+
+              {openDate && (
+                <div className="hero__popover hero__popover--dates" role="dialog">
                   <DateRange
-                    editableDateInputs={true}
+                    editableDateInputs
                     onChange={(item) => setDates([item.selection])}
                     moveRangeOnFirstSelection={false}
                     ranges={dates}
-                    className="date"
+                    className="hero__date-picker"
                     minDate={new Date()}
                   />
-                )}
-              </div>
-              <div className="headerSearchItem">
-                <FontAwesomeIcon icon={faPerson} className="headerIcon" />
-                <span
-                  onClick={() => setOpenOptions(!openOptions)}
-                  className="headerSearchText"
-                >{`${options.adult} adult · ${options.children} children · ${options.room} room`}</span>
-                {openOptions && (
-                  <div className="options">
-                    <div className="optionItem">
-                      <span className="optionText">Adult</span>
-                      <div className="optionCounter">
+                  <button type="button" className="btn-outline hero__popover-close" onClick={() => setOpenDate(false)}>
+                    Done
+                  </button>
+                </div>
+              )}
+
+              {openOptions && (
+                <div className="hero__popover hero__popover--options" role="dialog">
+                  {[
+                    { key: "adult", label: "Adults", min: 1 },
+                    { key: "children", label: "Children", min: 0 },
+                    { key: "room", label: "Rooms", min: 1 },
+                  ].map(({ key, label, min }) => (
+                    <div className="hero__option-row" key={key}>
+                      <span className="hero__option-label">{label}</span>
+                      <div className="hero__option-counter">
                         <button
-                          disabled={options.adult <= 1}
-                          className="optionCounterButton"
-                          onClick={() => handleOption("adult", "d")}
+                          type="button"
+                          className="hero__option-button"
+                          onClick={() => handleOption(key, "d")}
+                          disabled={options[key] <= min}
+                          aria-label={`Decrease ${label}`}
                         >
-                          -
+                          −
                         </button>
-                        <span className="optionCounterNumber">
-                          {options.adult}
-                        </span>
+                        <span className="hero__option-value">{options[key]}</span>
                         <button
-                          className="optionCounterButton"
-                          onClick={() => handleOption("adult", "i")}
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                    <div className="optionItem">
-                      <span className="optionText">Children</span>
-                      <div className="optionCounter">
-                        <button
-                          disabled={options.children <= 0}
-                          className="optionCounterButton"
-                          onClick={() => handleOption("children", "d")}
-                        >
-                          -
-                        </button>
-                        <span className="optionCounterNumber">
-                          {options.children}
-                        </span>
-                        <button
-                          className="optionCounterButton"
-                          onClick={() => handleOption("children", "i")}
+                          type="button"
+                          className="hero__option-button"
+                          onClick={() => handleOption(key, "i")}
+                          aria-label={`Increase ${label}`}
                         >
                           +
                         </button>
                       </div>
                     </div>
-                    <div className="optionItem">
-                      <span className="optionText">Room</span>
-                      <div className="optionCounter">
-                        <button
-                          disabled={options.room <= 1}
-                          className="optionCounterButton"
-                          onClick={() => handleOption("room", "d")}
-                        >
-                          -
-                        </button>
-                        <span className="optionCounterNumber">
-                          {options.room}
-                        </span>
-                        <button
-                          className="optionCounterButton"
-                          onClick={() => handleOption("room", "i")}
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="headerSearchItem">
-                <button className="headerBtn" onClick={handleSearch}>
-                  Search
-                </button>
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </>
         )}
       </div>
-    </div>
+    </section>
   );
 };
 
