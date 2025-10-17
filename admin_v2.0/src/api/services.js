@@ -42,19 +42,17 @@ export const deleteResource = async (resource, id) => {
 };
 
 export const login = async (credentials) => {
-  const payload = {
-    ...credentials,
-    scope: "admin",
-  };
-  const response = await apiClient.post("/auth/login", payload);
+  const response = await apiClient.post("/auth/login", credentials);
   return response.data;
 };
 
-export const registerUser = async (payload) => {
-  const response = await apiClient.post("/auth/register", {
-    ...payload,
-    scope: "admin",
-  });
+export const logout = async () => {
+  const response = await apiClient.post("/auth/logout");
+  return response.data;
+};
+
+export const createUser = async (payload) => {
+  const response = await apiClient.post("/users", payload);
   return response.data;
 };
 
@@ -109,11 +107,7 @@ export const uploadHotelImage = async (file) => {
   const formData = new FormData();
   formData.append("image", file);
 
-  const response = await apiClient.post("/upload/hotels", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  const response = await apiClient.post("/upload/hotels", formData);
 
   return response.data?.url;
 };
@@ -122,11 +116,7 @@ export const uploadRoomImage = async (file) => {
   const formData = new FormData();
   formData.append("image", file);
 
-  const response = await apiClient.post("/upload/rooms", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  const response = await apiClient.post("/upload/rooms", formData);
 
   return response.data?.url;
 };

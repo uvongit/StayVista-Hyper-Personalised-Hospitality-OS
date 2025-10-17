@@ -86,7 +86,7 @@ const Register = () => {
             <input
               id="city"
               type="text"
-              placeholder="San Francisco"
+              placeholder="Delhi"
               value={form.city}
               onChange={handleChange}
               required
@@ -98,7 +98,7 @@ const Register = () => {
             <input
               id="country"
               type="text"
-              placeholder="United States"
+              placeholder="India"
               value={form.country}
               onChange={handleChange}
               required
@@ -110,7 +110,7 @@ const Register = () => {
             <input
               id="phone"
               type="tel"
-              placeholder="+1 415 555 1234"
+              placeholder="+91 1234567890"
               value={form.phone}
               onChange={handleChange}
               required

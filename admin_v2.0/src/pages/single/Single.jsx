@@ -11,6 +11,7 @@ import {
 } from "../../api/services.js";
 import { AuthContext } from "../../context/AuthContext.js";
 import LatestTransactionsTable from "../../components/table/LatestTransactionsTable.jsx";
+import { extractApiErrorMessage } from "../../utils/error.js";
 
 const PLACEHOLDER_IMAGE = "https://icon-library.com/images/no-image-icon/no-image-icon-0.jpg";
 const MAX_ROOM_IMAGES = 6;
@@ -233,7 +234,7 @@ const Single = () => {
         setData(result);
       } catch (err) {
         if (!active) return;
-        setError(err?.response?.data?.message || err?.message || "Failed to load details");
+        setError(extractApiErrorMessage(err, "Failed to load details"));
         setData(null);
       } finally {
         if (active) setLoading(false);
@@ -362,7 +363,7 @@ const Single = () => {
         setRoomImageFeedback(`${nextCount}/${MAX_ROOM_IMAGES} images in gallery.`);
       }
     } catch (err) {
-      setRoomSaveError(err?.response?.data?.message || err?.message || "Failed to upload image.");
+      setRoomSaveError(extractApiErrorMessage(err, "Failed to upload image."));
     } finally {
       setRoomUploading(false);
       if (event.target) event.target.value = "";
@@ -462,7 +463,7 @@ const Single = () => {
       );
       setRoomSaveSuccess("Room details saved.");
     } catch (err) {
-      setRoomSaveError(err?.response?.data?.message || err?.message || "Failed to save room details.");
+      setRoomSaveError(extractApiErrorMessage(err, "Failed to save room details."));
     } finally {
       setRoomSaving(false);
     }
@@ -499,7 +500,7 @@ const Single = () => {
         setHotelOptions(normalized);
       } catch (err) {
         if (!active) return;
-        setHotelOptionsError(err?.response?.data?.message || err?.message || "Failed to load hotels.");
+        setHotelOptionsError(extractApiErrorMessage(err, "Failed to load hotels."));
         setHotelOptions([]);
       } finally {
         if (active) setLoadingHotels(false);
@@ -556,8 +557,8 @@ const Single = () => {
 
   const userModal =
     editingUser && data && formState ? (
-      <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/30 backdrop-blur-sm p-6">
-        <div className="w-full max-w-2xl space-y-6 rounded-2xl border border-border bg-surface p-8 shadow-soft dark:border-dark-border dark:bg-dark-surface">
+      <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/30 backdrop-blur-sm p-4 sm:p-6">
+        <div className="w-full max-w-2xl space-y-6 rounded-2xl border border-border bg-surface p-6 shadow-soft dark:border-dark-border dark:bg-dark-surface sm:p-8">
           <header className="space-y-1">
             <h2 className="text-xl font-semibold text-text-primary dark:text-dark-text-primary">Edit user</h2>
             <p className="text-sm text-text-muted dark:text-dark-text-muted">
@@ -566,12 +567,26 @@ const Single = () => {
           </header>
 
           <form
-            className="grid gap-4"
+            className="grid max-h-[70vh] gap-4 overflow-y-auto pr-1"
             onSubmit={async (event) => {
               event.preventDefault();
+
+              const trimmedNewPassword = passwordState.newPassword.trim();
+              const trimmedConfirmPassword = passwordState.confirmPassword.trim();
+              const hasPasswordInput = trimmedNewPassword.length > 0 || trimmedConfirmPassword.length > 0;
+              const canResetPassword = trimmedNewPassword.length > 0 && trimmedConfirmPassword.length > 0;
+
               setSaving(true);
               setSaveError("");
               setSaveSuccess("");
+              clearPasswordFeedback();
+
+              if (hasPasswordInput && trimmedNewPassword !== trimmedConfirmPassword) {
+                setSaving(false);
+                setResetError("New password and confirmation do not match.");
+                return;
+              }
+
               try {
                 const payload = {
                   ...formState,
@@ -599,10 +614,21 @@ const Single = () => {
                 if (authUser?._id === updated._id) {
                   dispatch({ type: "UPDATE_USER", payload: updated });
                 }
+
+                if (canResetPassword) {
+                  try {
+                    await resetUserPassword(id, trimmedNewPassword);
+                    resetPasswordFields();
+                    setResetSuccess("Password reset successfully.");
+                  } catch (passwordErr) {
+                    setResetError(extractApiErrorMessage(passwordErr, "Failed to reset password"));
+                  }
+                }
+
                 setSaveSuccess("Profile details saved successfully.");
               } catch (err) {
                 if (!isMounted.current) return;
-                setSaveError(err?.response?.data?.message || err?.message || "Failed to update user");
+                setSaveError(extractApiErrorMessage(err, "Failed to update user"));
               } finally {
                 if (isMounted.current) setSaving(false);
               }
@@ -768,23 +794,31 @@ const Single = () => {
               <button
                 type="button"
                 className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text-secondary transition hover:border-primary hover:text-primary dark:border-dark-border dark:text-dark-text-secondary"
-                disabled={
-                  resettingPassword ||
-                  !passwordState.newPassword ||
-                  passwordState.newPassword !== passwordState.confirmPassword
-                }
+                disabled={resettingPassword || !passwordState.newPassword.trim()}
                 onClick={async () => {
-                  if (!passwordState.newPassword || passwordState.newPassword !== passwordState.confirmPassword) return;
-                  setResettingPassword(true);
+                  const trimmedPassword = passwordState.newPassword.trim();
+                  const trimmedConfirmPassword = passwordState.confirmPassword.trim();
+
                   clearPasswordFeedback();
+
+                  if (!trimmedPassword || !trimmedConfirmPassword) {
+                    setResetError("Enter and confirm the new password before resetting.");
+                    return;
+                  }
+
+                  if (trimmedPassword !== trimmedConfirmPassword) {
+                    setResetError("New password and confirmation do not match.");
+                    return;
+                  }
+
+                  setResettingPassword(true);
                   try {
-                    const trimmedPassword = passwordState.newPassword.trim();
                     await resetUserPassword(id, trimmedPassword);
                     resetPasswordFields();
                     setResetSuccess("Password reset successfully.");
                   } catch (err) {
                     setResetError(
-                      err?.response?.data?.message || err?.message || "Failed to reset password"
+                      extractApiErrorMessage(err, "Failed to reset password")
                     );
                   } finally {
                     setResettingPassword(false);
@@ -802,11 +836,11 @@ const Single = () => {
 
   const roomModal =
     editingRoom && isRoomResource && roomForm ? (
-      <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/30 backdrop-blur-sm p-6 sm:p-8">
-        <div className="flex h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-border/80 bg-surface shadow-[0_48px_140px_-70px_rgba(15,23,42,0.75)] dark:border-dark-border/80 dark:bg-dark-surface">
-          <header className="relative overflow-hidden border-b border-border/60 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent px-6 py-5 sm:px-8 sm:py-6 dark:border-dark-border/60">
+      <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/30 backdrop-blur-sm p-4 sm:p-8">
+        <div className="flex h-full max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-border/80 bg-surface shadow-[0_48px_140px_-70px_rgba(15,23,42,0.75)] dark:border-dark-border/80 dark:bg-dark-surface">
+          <header className="relative overflow-hidden border-b border-border/60 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent px-4 py-4 sm:px-8 sm:py-6 dark:border-dark-border/60">
             <div className="absolute inset-y-0 right-0 w-2/3 bg-gradient-to-l from-primary/30 via-transparent to-transparent opacity-60 blur-2xl" />
-            <div className="relative flex flex-wrap items-start justify-between gap-6">
+            <div className="relative flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-6">
               <div className="space-y-2">
                 <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-0.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-primary dark:bg-primary/20">
                   Room management
@@ -820,7 +854,7 @@ const Single = () => {
                   </p>
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-3 text-sm font-semibold">
+              <div className="hidden flex-wrap items-center gap-3 text-sm font-semibold sm:flex">
                 <div className="rounded-2xl border border-border/50 bg-white/70 px-4 py-1.5 text-text-primary backdrop-blur dark:border-dark-border/50 dark:bg-dark-background/70 dark:text-dark-text-primary">
                   <span className="block text-[11px] uppercase tracking-[0.22em] text-text-muted dark:text-dark-text-muted">
                     Nightly rate
@@ -1342,7 +1376,7 @@ const Single = () => {
                   View all
                 </Link>
               </div>
-              <LatestTransactionsTable />
+              <LatestTransactionsTable hotelId={resource === "hotels" ? id : ""} />
             </div>
           </section>
         )}

@@ -1,5 +1,5 @@
+import "dotenv/config";
 import express from "express";
-import dotenv from "dotenv";
 import mongoose from "mongoose";
 import authRoute from "./routes/auth.routes.js";
 import usersRoute from "./routes/users.routes.js";
@@ -13,7 +13,6 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 
 const app = express();
-dotenv.config();
 app.set("trust proxy", 1);
 
 // Environment validation
@@ -85,7 +84,7 @@ const PORT = process.env.PORT || 8800;
 app.listen(PORT, () => {
   connect();
   console.log(
-    `Server running on port ${PORT} in ${
+    `🍀Server running on port ${PORT} in ${
       process.env.NODE_ENV || "development"
     } mode`
   );

@@ -11,6 +11,8 @@ import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useCallback, useContext, useEffect, useMemo } from "react";
 import { AuthContext } from "../../context/AuthContext";
+import { logout as logoutRequest } from "../../api/services";
+import { clearAuth } from "../../utils/authStorage";
 
 const baseItemClasses =
   "flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-all duration-200";
@@ -19,6 +21,18 @@ const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
   const { dispatch: authDispatch, user } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
+
+  const handleLogout = useCallback(async () => {
+    try {
+      await logoutRequest();
+    } catch (err) {
+      console.error("Failed to terminate admin session remotely", err);
+    } finally {
+      clearAuth();
+      authDispatch({ type: "LOGOUT" });
+      navigate("/login", { replace: true });
+    }
+  }, [authDispatch, navigate]);
 
   const containerClasses = useMemo(() => {
     const base =
@@ -33,11 +47,6 @@ const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
         : "pointer-events-none fixed inset-0 z-40 opacity-0 lg:hidden",
     [isOpen]
   );
-
-  const handleLogout = () => {
-    authDispatch({ type: "LOGOUT" });
-    navigate("/login", { replace: true });
-  };
 
   useEffect(() => {
     if (isOpen) {

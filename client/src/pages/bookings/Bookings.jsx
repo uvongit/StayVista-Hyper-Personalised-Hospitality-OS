@@ -30,6 +30,7 @@ const Bookings = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("all");
+  const [showAll, setShowAll] = useState(false);
 
   const loadBookings = async () => {
     setLoading(true);
@@ -48,10 +49,39 @@ const Bookings = () => {
     loadBookings();
   }, []);
 
+  const todaysBookings = useMemo(
+    () => bookings.filter((booking) => dayjs(booking.createdAt).isSame(dayjs(), "day")),
+    [bookings]
+  );
+
+  const previousBookings = useMemo(
+    () => bookings.filter((booking) => !dayjs(booking.createdAt).isSame(dayjs(), "day")),
+    [bookings]
+  );
+
   const filteredBookings = useMemo(() => {
-    if (filter === "all") return bookings;
-    return bookings.filter((booking) => booking.status === filter);
-  }, [bookings, filter]);
+    const base = showAll || todaysBookings.length === 0 ? bookings : todaysBookings;
+    if (filter === "all") return base;
+    return base.filter((booking) => booking.status === filter);
+  }, [bookings, filter, showAll, todaysBookings]);
+
+  const monthlySummary = useMemo(() => {
+    const currentMonthBookings = bookings.filter((booking) =>
+      dayjs(booking.createdAt).isSame(dayjs(), "month")
+    );
+
+    const monthlyRevenue = currentMonthBookings.reduce((total, booking) => {
+      const amount = typeof booking.totalAmount === "number" ? booking.totalAmount : Number(booking.totalAmount);
+      return Number.isFinite(amount) ? total + amount : total;
+    }, 0);
+
+    return {
+      revenue: monthlyRevenue,
+      count: currentMonthBookings.length,
+    };
+  }, [bookings]);
+
+  const hasPrevious = previousBookings.length > 0;
 
   return (
     <div className="bookings-page">
@@ -81,6 +111,19 @@ const Bookings = () => {
         </header>
 
         {error && <div className="bookings-error">{error}</div>}
+
+        <section className="bookings-metrics" aria-label="Monthly expenditure summary">
+          <article className="metric-card">
+            <h2>Monthly expenditure</h2>
+            <p className="metric-value">{formatCurrency(monthlySummary.revenue)}</p>
+            <p className="metric-caption">Amount you've spent on stays this month</p>
+          </article>
+          <article className="metric-card">
+            <h2>Bookings this month</h2>
+            <p className="metric-value">{monthlySummary.count}</p>
+            <p className="metric-caption">All reservations confirmed or pending</p>
+          </article>
+        </section>
 
         <section className="bookings-list">
           {loading && bookings.length === 0 && <div className="loading">Loading bookings…</div>}
@@ -141,6 +184,18 @@ const Bookings = () => {
             </article>
           ))}
         </section>
+
+        {hasPrevious && (
+          <div className="bookings-load-more">
+            <button
+              type="button"
+              onClick={() => setShowAll((prev) => !prev)}
+              className="load-more-button"
+            >
+              {showAll ? "Show today's bookings" : "Load previous bookings"}
+            </button>
+          </div>
+        )}
       </main>
       <Footer />
     </div>

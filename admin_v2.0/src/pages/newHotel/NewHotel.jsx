@@ -1,7 +1,6 @@
 import DriveFolderUploadOutlinedIcon from "@mui/icons-material/DriveFolderUploadOutlined";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { hotelInputs } from "../../formSource.js";
 import {
   createHotel,
   fetchCollection,
@@ -9,9 +8,61 @@ import {
   updateHotel,
   uploadHotelImage,
 } from "../../api/services.js";
+import { extractApiErrorMessage } from "../../utils/error.js";
 
 const MAX_HOTEL_IMAGES = 8;
 const FALLBACK_HERO_IMAGE = "https://icon-library.com/images/no-image-icon/no-image-icon-0.jpg";
+
+const HOTEL_INPUTS = [
+  {
+    id: "name",
+    label: "Name",
+    type: "text",
+    placeholder: "My Hotel",
+  },
+  {
+    id: "type",
+    label: "Type",
+    type: "text",
+    placeholder: "hotel",
+  },
+  {
+    id: "city",
+    label: "City",
+    type: "text",
+    placeholder: "Delhi",
+  },
+  {
+    id: "address",
+    label: "Address",
+    type: "text",
+    placeholder: "Square block, st216",
+  },
+  {
+    id: "distance",
+    label: "Distance from City Center",
+    type: "text",
+    placeholder: "500",
+  },
+  {
+    id: "title",
+    label: "Title",
+    type: "text",
+    placeholder: "The best Hotel",
+  },
+  {
+    id: "desc",
+    label: "Description",
+    type: "text",
+    placeholder: "description",
+  },
+  {
+    id: "cheapestPrice",
+    label: "Price",
+    type: "text",
+    placeholder: "100",
+  },
+];
 
 const HOTEL_FIELD_SECTIONS = [
   {
@@ -31,7 +82,7 @@ const HOTEL_FIELD_SECTIONS = [
   },
 ];
 
-const HOTEL_INPUT_MAP = hotelInputs.reduce((acc, input) => {
+const HOTEL_INPUT_MAP = HOTEL_INPUTS.reduce((acc, input) => {
   acc[input.id] = input;
   return acc;
 }, {});
@@ -73,7 +124,7 @@ const NewHotel = () => {
   const [imageFeedback, setImageFeedback] = useState("");
   const [initializing, setInitializing] = useState(isEditMode);
 
-  const requiredFields = useMemo(() => hotelInputs.map((input) => input.id), []);
+  const requiredFields = useMemo(() => HOTEL_INPUTS.map((input) => input.id), []);
 
   const loadRooms = useCallback(async () => {
     setRoomsLoading(true);
@@ -82,7 +133,7 @@ const NewHotel = () => {
       setRoomOptions(Array.isArray(data) ? data : []);
       setRoomsError("");
     } catch (err) {
-      setRoomsError(err?.response?.data?.message || err?.message || "Failed to load rooms");
+      setRoomsError(extractApiErrorMessage(err, "Failed to load rooms"));
     } finally {
       setRoomsLoading(false);
     }
@@ -122,7 +173,7 @@ const NewHotel = () => {
           photos.length ? `${photos.length} image${photos.length > 1 ? "s" : ""} in library.` : ""
         );
       } catch (err) {
-        setSubmitError(err?.response?.data?.message || err?.message || "Failed to load hotel details.");
+        setSubmitError(extractApiErrorMessage(err, "Failed to load hotel details."));
       } finally {
         setInitializing(false);
       }
@@ -141,9 +192,12 @@ const NewHotel = () => {
     setSubmitSuccess("");
   };
 
-  const handleSelect = (event) => {
-    const value = Array.from(event.target.selectedOptions, (option) => option.value);
-    setRooms(value);
+  const handleToggleRoom = (roomId) => {
+    setRooms((prev) => {
+      const exists = prev.includes(roomId);
+      const next = exists ? prev.filter((id) => id !== roomId) : [...prev, roomId];
+      return next;
+    });
     setSubmitError("");
     setSubmitSuccess("");
   };
@@ -230,7 +284,7 @@ const NewHotel = () => {
             try {
               return await uploadHotelImage(file);
             } catch (err) {
-              throw new Error(err?.response?.data?.message || err?.message || "Image upload failed");
+              throw new Error(extractApiErrorMessage(err, "Image upload failed"));
             }
           })
         );
@@ -262,7 +316,7 @@ const NewHotel = () => {
         navigate(`/hotels/${response._id}`);
       }, 600);
     } catch (err) {
-      setSubmitError(err?.response?.data?.message || err?.message || "Failed to create hotel");
+      setSubmitError(extractApiErrorMessage(err, "Failed to create hotel"));
       setSubmitSuccess("");
     } finally {
       setSubmitting(false);
@@ -444,45 +498,84 @@ const NewHotel = () => {
                 Select which room types belong to this property (optional). Hold Ctrl/Cmd to select multiple.
               </p>
             </div>
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,260px),1fr]">
-              <label className="grid gap-2 text-sm">
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,280px),1fr]">
+              <div className="grid gap-2 text-sm">
                 <span className="font-medium text-text-secondary dark:text-dark-text-secondary">Rooms</span>
-                <select
-                  multiple
-                  value={rooms}
-                  onChange={handleSelect}
-                  disabled={roomsLoading || submitting || initializing}
-                  className="min-h-[10rem] rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-dark-border dark:bg-dark-background dark:text-dark-text-primary"
+                <div
+                  className="grid max-h-72 gap-2 overflow-y-auto rounded-2xl border border-border/60 bg-white/60 p-3 shadow-[0_10px_28px_-20px_rgba(15,23,42,0.32)] backdrop-blur-sm dark:border-dark-border/60 dark:bg-dark-surface/70 dark:shadow-[0_10px_28px_-18px_rgba(8,11,18,0.42)]"
+                  role="group"
+                  aria-label="Select rooms for this hotel"
                 >
-                  {roomsLoading && <option disabled>Loading rooms…</option>}
-                  {roomsError && !roomsLoading && <option disabled>{roomsError || "Failed to load rooms"}</option>}
-                  {!roomsLoading && !roomsError &&
-                    roomOptions.map((room) => (
-                      <option key={room._id} value={room._id}>
-                        {room.title}
-                      </option>
-                    ))}
-                </select>
-                {roomsError && !roomsLoading && (
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-danger">
-                    <span>{roomsError || "Failed to load rooms"}</span>
-                    <button
-                      type="button"
-                      onClick={loadRooms}
-                      className="rounded-full border border-danger/40 px-3 py-1 font-semibold text-danger transition hover:bg-danger/10"
-                      disabled={roomsLoading}
-                    >
-                      Retry
-                    </button>
-                  </div>
-                )}
-              </label>
+                  {roomsLoading ? (
+                    <p className="text-xs text-text-muted dark:text-dark-text-muted">Loading rooms…</p>
+                  ) : roomsError ? (
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-danger">
+                      <span>{roomsError || "Failed to load rooms"}</span>
+                      <button
+                        type="button"
+                        onClick={loadRooms}
+                        className="rounded-full border border-danger/40 px-3 py-1 font-semibold text-danger transition hover:bg-danger/10"
+                        disabled={roomsLoading}
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  ) : roomOptions.length ? (
+                    roomOptions.map((room) => {
+                      const optionId = room?._id?.toString?.() || room?._id || "";
+                      const checked = rooms.includes(optionId);
+                      return (
+                        <label
+                          key={optionId || room.title}
+                          className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 transition-all duration-150 ${
+                            checked
+                              ? "border-primary/40 bg-primary/10 text-primary dark:border-primary/50 dark:bg-primary/15"
+                              : "border-border/60 bg-white/70 text-text-secondary hover:border-primary/30 hover:bg-primary/5 dark:border-dark-border/60 dark:bg-dark-background/60 dark:text-dark-text-secondary dark:hover:border-primary/40 dark:hover:bg-primary/10"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-border accent-primary"
+                            value={optionId}
+                            checked={checked}
+                            onChange={() => handleToggleRoom(optionId)}
+                            disabled={submitting || initializing}
+                          />
+                          <div className="flex flex-col">
+                            <span className="text-sm font-semibold text-text-primary dark:text-dark-text-primary">
+                              {room.title || "Untitled room"}
+                            </span>
+                            {room.desc ? (
+                              <span className="text-xs text-text-muted line-clamp-2 dark:text-dark-text-muted">
+                                {room.desc}
+                              </span>
+                            ) : null}
+                          </div>
+                        </label>
+                      );
+                    })
+                  ) : (
+                    <p className="text-xs text-text-muted dark:text-dark-text-muted">No rooms available yet.</p>
+                  )}
+                </div>
+              </div>
 
               {!!selectedRoomDetails.length && (
-                <div className="grid gap-3 rounded-xl border border-border/60 bg-background/60 p-4 text-sm dark:border-dark-border/60 dark:bg-dark-background/60">
+                <div className="flex flex-col gap-3 rounded-2xl border border-border/50 bg-white/70 p-4 text-sm shadow-[0_12px_32px_-18px_rgba(15,23,42,0.18)] backdrop-blur dark:border-dark-border/60 dark:bg-dark-surface/70 dark:shadow-[0_12px_32px_-18px_rgba(8,11,18,0.36)]">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-text-muted dark:text-dark-text-muted">
+                      Selected rooms
+                    </span>
+                    <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-primary dark:bg-primary/20 dark:text-primary/90">
+                      {selectedRoomDetails.length}
+                    </span>
+                  </div>
                   <ul className="flex flex-wrap gap-2">
                     {selectedRoomDetails.map((room) => (
-                      <li key={room._id} className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary dark:bg-primary/20">
+                      <li
+                        key={room._id}
+                        className="rounded-xl border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary shadow-[0_6px_14px_-10px_rgba(59,130,246,0.5)] dark:border-primary/30 dark:bg-primary/15 dark:text-primary/90"
+                      >
                         {room.title}
                       </li>
                     ))}
@@ -495,6 +588,11 @@ const NewHotel = () => {
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="submit"
+              className={`relative inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-80
+                ${submitting || initializing
+                  ? "bg-primary/60 text-white shadow-inner"
+                  : "bg-gradient-to-r from-primary via-indigo-500 to-purple-500 text-white shadow-[0_18px_34px_-18px_rgba(59,130,246,0.8)] hover:-translate-y-0.5 hover:shadow-[0_22px_40px_-20px_rgba(79,70,229,0.75)]"}
+              `}
               disabled={submitting || initializing}
             >
               {submitting ? (isEditMode ? "Saving..." : "Creating...") : isEditMode ? "Save changes" : "Create hotel"}

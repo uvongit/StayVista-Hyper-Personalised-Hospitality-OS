@@ -18,38 +18,70 @@ const TodaysTransactions = () => {
   const isAdmin = Boolean(user?.isAdmin);
   const managedHotelId = user?.managedHotel?.toString?.() || user?.managedHotel || "";
 
-  const [transactions, setTransactions] = useState([]);
+  const [todayTransactions, setTodayTransactions] = useState([]);
+  const [allTransactions, setAllTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!isAdmin) {
+      setTodayTransactions([]);
+      setAllTransactions([]);
+      setShowAll(false);
+      return;
+    }
 
-    const fetchTodayTransactions = async () => {
+    const loadTransactions = async () => {
       setLoading(true);
       setError("");
 
       try {
-        const from = dayjs().startOf("day").toISOString();
-        const to = dayjs().endOf("day").toISOString();
-        const params = { from, to };
+        const baseParams = {};
         if (!user?.superAdmin && managedHotelId) {
-          params.hotelId = managedHotelId;
+          baseParams.hotelId = managedHotelId;
         }
-        const data = await getTransactions(params);
-        setTransactions(Array.isArray(data) ? data : []);
+
+        const todayParams = {
+          ...baseParams,
+          from: dayjs().startOf("day").toISOString(),
+          to: dayjs().endOf("day").toISOString(),
+        };
+
+        const allParams = Object.keys(baseParams).length ? { ...baseParams } : undefined;
+
+        const [todayData, allData] = await Promise.all([
+          getTransactions(todayParams),
+          getTransactions(allParams),
+        ]);
+
+        const todayArray = Array.isArray(todayData) ? todayData : [];
+        const allArray = Array.isArray(allData) ? allData : [];
+
+        setTodayTransactions(todayArray);
+        setAllTransactions(allArray);
+        setShowAll(todayArray.length === 0);
       } catch (err) {
-        setError(err?.message || "Failed to load today's transactions");
+        setError(err?.message || "Failed to load transactions");
+        setTodayTransactions([]);
+        setAllTransactions([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTodayTransactions();
+    loadTransactions();
   }, [isAdmin, managedHotelId, user?.superAdmin]);
 
+  const displayedTransactions = useMemo(() => {
+    if (showAll || todayTransactions.length === 0) {
+      return allTransactions;
+    }
+    return todayTransactions;
+  }, [showAll, todayTransactions, allTransactions]);
+
   const summary = useMemo(() => {
-    return transactions.reduce(
+    return displayedTransactions.reduce(
       (acc, txn) => {
         const key = txn.status || "pending";
         acc[key] = (acc[key] || 0) + 1;
@@ -58,7 +90,36 @@ const TodaysTransactions = () => {
       },
       { captured: 0, pending: 0, refunded: 0, failed: 0, totalAmount: 0 }
     );
-  }, [transactions]);
+  }, [displayedTransactions]);
+
+  const monthlySummary = useMemo(() => {
+    const currentMonthTransactions = allTransactions.filter((txn) =>
+      dayjs(txn.createdAt).isSame(dayjs(), "month")
+    );
+
+    const capturedStatuses = new Set(["captured", "approved", "completed"]);
+    const monthlyEarnings = currentMonthTransactions.reduce((total, txn) => {
+      if (!capturedStatuses.has((txn.status || "").toLowerCase())) {
+        return total;
+      }
+      const amount = typeof txn.amount === "number" ? txn.amount : Number(txn.amount);
+      return Number.isFinite(amount) ? total + amount : total;
+    }, 0);
+
+    return {
+      earnings: monthlyEarnings,
+      count: currentMonthTransactions.length,
+    };
+  }, [allTransactions]);
+
+  const hasPrevious = useMemo(
+    () => allTransactions.some((txn) => !dayjs(txn.createdAt).isSame(dayjs(), "day")),
+    [allTransactions]
+  );
+
+  const handleToggle = () => {
+    setShowAll((prev) => !prev);
+  };
 
   if (!isAdmin) {
     return (
@@ -91,6 +152,19 @@ const TodaysTransactions = () => {
 
         {error && <div className="form-error">{error}</div>}
 
+        <section className="admin-insights" aria-label="Monthly earnings summary">
+          <article className="admin-insight">
+            <span>Monthly earnings</span>
+            <strong>
+              {monthlySummary.earnings.toLocaleString("en-IN", {
+                style: "currency",
+                currency: "INR",
+                minimumFractionDigits: 0,
+              })}
+            </strong>
+          </article>
+        </section>
+
         <section className="admin-stat-grid">
           <div className="admin-stat-card">
             <span>Total captured</span>
@@ -114,8 +188,8 @@ const TodaysTransactions = () => {
 
         <section className="admin-panel">
           <h2>Transaction details</h2>
-          {transactions.length === 0 && !loading ? (
-            <p>No transactions captured today.</p>
+          {displayedTransactions.length === 0 && !loading ? (
+            <p>No transactions found.</p>
           ) : (
             <div className="admin-table-wrapper">
               <table className="admin-table">
@@ -131,14 +205,14 @@ const TodaysTransactions = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {transactions.map((txn) => (
+                  {displayedTransactions.map((txn) => (
                     <tr key={txn._id}>
-                      <td>{txn._id}</td>
-                      <td>{txn.booking?._id || "—"}</td>
-                      <td>{txn.hotel?.name || "—"}</td>
-                      <td>{(txn.method || "manual").toUpperCase()}</td>
-                      <td>{STATUS_LABELS[txn.status] || txn.status || "Pending"}</td>
-                      <td>
+                      <td data-label="Transaction">{txn._id}</td>
+                      <td data-label="Booking">{txn.booking?._id || "—"}</td>
+                      <td data-label="Hotel">{txn.hotel?.name || "—"}</td>
+                      <td data-label="Method">{(txn.method || "manual").toUpperCase()}</td>
+                      <td data-label="Status">{STATUS_LABELS[txn.status] || txn.status || "Pending"}</td>
+                      <td data-label="Amount">
                         {typeof txn.amount === "number"
                           ? txn.amount.toLocaleString("en-IN", {
                               style: "currency",
@@ -147,7 +221,7 @@ const TodaysTransactions = () => {
                             })
                           : "—"}
                       </td>
-                      <td>{dayjs(txn.createdAt).format("MMM D, YYYY h:mm A")}</td>
+                      <td data-label="Created">{dayjs(txn.createdAt).format("MMM D, YYYY h:mm A")}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -155,6 +229,19 @@ const TodaysTransactions = () => {
             </div>
           )}
         </section>
+
+        {hasPrevious && (
+          <div className="admin-panel admin-panel--inline">
+            <button
+              type="button"
+              onClick={handleToggle}
+              className="btn-outline"
+              disabled={loading}
+            >
+              {showAll ? "Show today's transactions" : "Load previous transactions"}
+            </button>
+          </div>
+        )}
       </main>
       <Footer />
     </div>

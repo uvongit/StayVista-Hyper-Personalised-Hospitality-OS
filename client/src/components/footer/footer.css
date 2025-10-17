@@ -273,6 +273,27 @@
   text-transform: uppercase;
 }
 
+.footer__signature {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.footer__signature-text {
+  font-family: "Great Vibes", "Segoe Script", cursive;
+  font-size: clamp(18px, 2.4vw, 26px);
+  color: rgba(184, 213, 255, 0.96);
+  letter-spacing: 0.04em;
+  text-transform: none;
+  padding: 4px 12px;
+  border: 1px solid rgba(59, 130, 246, 0.28);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(30, 64, 175, 0.32), rgba(56, 189, 248, 0.14));
+  box-shadow: 0 6px 18px rgba(56, 189, 248, 0.12);
+  display: inline-flex;
+  align-items: center;
+}
+
 @media (max-width: 768px) {
   .footer__main {
     gap: 18px;

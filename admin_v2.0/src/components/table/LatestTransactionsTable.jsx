@@ -9,6 +9,7 @@ import Paper from "@mui/material/Paper";
 import dayjs from "dayjs";
 import { fetchTransactions } from "../../api/services.js";
 import useWindowSize from "../../hooks/useWindowSize.js";
+import { extractApiErrorMessage } from "../../utils/error.js";
 
 const MAX_RECENT_TRANSACTIONS = 6;
 
@@ -17,13 +18,19 @@ const normalizeText = (value, fallback = "—") => {
   return String(value);
 };
 
-const formatAmount = (amount) => {
-  if (typeof amount !== "number") return "—";
-  return amount.toLocaleString("en-IN", {
-    style: "currency",
-    currency: "INR",
-    minimumFractionDigits: 0,
-  });
+const formatAmount = (amount, currency = "INR") => {
+  const numeric = typeof amount === "number" ? amount : Number(amount);
+  if (!Number.isFinite(numeric)) return "—";
+
+  try {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: currency.toUpperCase(),
+      maximumFractionDigits: 0,
+    }).format(numeric);
+  } catch {
+    return `${currency.toUpperCase()} ${numeric.toLocaleString("en-IN")}`;
+  }
 };
 
 const formatMethod = (method) => {
@@ -44,7 +51,9 @@ const formatStatus = (status) => {
     .replace(/(^|\s)\w/g, (match) => match.toUpperCase());
 };
 
-const LatestTransactionsTable = () => {
+const normalizeId = (value) => (value ? String(value) : "");
+
+const LatestTransactionsTable = ({ hotelId = "" }) => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -55,30 +64,54 @@ const LatestTransactionsTable = () => {
     setLoading(true);
     setError("");
     try {
-      const data = await fetchTransactions({ limit: MAX_RECENT_TRANSACTIONS, sort: "-createdAt" });
+      const params = { limit: MAX_RECENT_TRANSACTIONS, sort: "-createdAt" };
+      if (hotelId) params.hotelId = hotelId;
+      const data = await fetchTransactions(params);
       setTransactions(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(err?.response?.data?.message || err?.message || "Failed to load transactions.");
+      setError(extractApiErrorMessage(err, "Failed to load transactions."));
       setTransactions([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [hotelId]);
 
   useEffect(() => {
     loadTransactions();
   }, [loadTransactions]);
 
+  const filteredTransactions = useMemo(() => {
+    if (!hotelId) return transactions;
+    const targetId = normalizeId(hotelId);
+    if (!targetId) return transactions;
+
+    return transactions.filter((row) => {
+      const candidateIds = [
+        row?.hotel?._id,
+        row?.hotel?.id,
+        row?.hotelId,
+        typeof row?.hotel === "string" ? row.hotel : null,
+        row?.booking?.hotel?._id,
+        row?.booking?.hotelId,
+      ];
+
+      return candidateIds.some((candidate) => normalizeId(candidate) === targetId);
+    });
+  }, [hotelId, transactions]);
+
   const emptyState = useMemo(() => {
     if (loading) return "Loading latest transactions…";
     if (error) return error;
-    return "No transactions captured yet.";
-  }, [error, loading]);
+    if (filteredTransactions.length === 0) {
+      return hotelId ? "No transactions for this hotel yet." : "No transactions captured yet.";
+    }
+    return "";
+  }, [error, filteredTransactions.length, hotelId, loading]);
 
   if (isMobile) {
     return (
       <div className="space-y-4">
-        {loading || error || transactions.length === 0 ? (
+        {loading || error || filteredTransactions.length === 0 ? (
           <div
             className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-sm ${
               error
@@ -100,7 +133,7 @@ const LatestTransactionsTable = () => {
           </div>
         ) : null}
 
-        {transactions.map((row) => {
+        {filteredTransactions.map((row) => {
           const status = (row.status || "pending").toLowerCase();
           const methodValue = (row.method || "manual").toLowerCase();
 
@@ -156,7 +189,7 @@ const LatestTransactionsTable = () => {
                     Amount
                   </span>
                   <span className="text-sm font-semibold text-text-primary dark:text-dark-text-primary">
-                    {formatAmount(row.amount)}
+                    {formatAmount(row.amount, row.currency)}
                   </span>
                 </div>
 
@@ -308,14 +341,14 @@ const LatestTransactionsTable = () => {
                   </div>
                 </TableCell>
               </TableRow>
-            ) : transactions.length === 0 ? (
+            ) : filteredTransactions.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center text-sm text-text-muted">
-                  No transactions captured yet.
+                  {hotelId ? "No transactions for this hotel yet." : "No transactions captured yet."}
                 </TableCell>
               </TableRow>
             ) : (
-              transactions.map((row) => {
+              filteredTransactions.map((row) => {
                 const status = (row.status || "pending").toLowerCase();
                 const methodValue = (row.method || "manual").toLowerCase();
 

@@ -5,7 +5,9 @@ import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import { DarkModeContext } from "../../context/darkModeContext";
 import { AuthContext } from "../../context/AuthContext";
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { logout as logoutRequest } from "../../api/services";
+import { clearAuth } from "../../utils/authStorage";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Navbar = ({ onToggleSidebar = () => {} }) => {
@@ -14,6 +16,18 @@ const Navbar = ({ onToggleSidebar = () => {} }) => {
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
+
+  const handleLogout = useCallback(async () => {
+    try {
+      await logoutRequest();
+    } catch (err) {
+      console.error("Failed to terminate admin session remotely", err);
+    } finally {
+      clearAuth();
+      authDispatch({ type: "LOGOUT" });
+      navigate("/login", { replace: true });
+    }
+  }, [authDispatch, navigate]);
 
   const profileActions = useMemo(
     () => [
@@ -27,13 +41,10 @@ const Navbar = ({ onToggleSidebar = () => {} }) => {
       {
         label: "Sign out",
         Icon: LogoutOutlinedIcon,
-        onClick: () => {
-          authDispatch({ type: "LOGOUT" });
-          navigate("/login", { replace: true });
-        },
+        onClick: handleLogout,
       },
     ],
-    [authDispatch, navigate, user]
+    [handleLogout, navigate, user]
   );
 
   const profileName = user?.name || user?.username || user?.email || "Guest";

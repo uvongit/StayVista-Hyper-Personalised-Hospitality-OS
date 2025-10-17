@@ -3,13 +3,15 @@ import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import "./login.css";
 import { login as loginRequest } from "../../api/auth";
+import { consumeSessionMessage } from "../../utils/session";
 
 const Login = () => {
   const [credentials, setCredentials] = useState({
-    username: "",
+    identifier: "",
     password: "",
   });
   const [formError, setFormError] = useState(null);
+  const [sessionMessage] = useState(() => consumeSessionMessage());
 
   const { loading, error, dispatch } = useContext(AuthContext);
 
@@ -25,32 +27,19 @@ const Login = () => {
     setFormError(null);
     dispatch({ type: "LOGIN_START" });
     try {
-      const trimmedPayload = {
-        username: credentials.username.trim(),
+      const response = await loginRequest({
+        identifier: credentials.identifier,
         password: credentials.password,
-      };
-      const response = await loginRequest(trimmedPayload);
+      });
 
-      const {
-        details: responseDetails = {},
-        token,
-        accessToken,
-        access_token,
-        jwtToken,
-      } = response ?? {};
+      const user = response?.user ?? null;
+      const accessToken = response?.accessToken ?? null;
 
-      const baseDetails =
-        responseDetails && typeof responseDetails === "object" && Object.keys(responseDetails).length > 0
-          ? responseDetails
-          : (response ?? {});
+      if (!user || !accessToken) {
+        throw new Error("Login response is missing authentication details.");
+      }
 
-      const resolvedToken = token || accessToken || access_token || jwtToken;
-      const userPayload = {
-        ...baseDetails,
-        ...(resolvedToken ? { token: resolvedToken } : {}),
-      };
-
-      dispatch({ type: "LOGIN_SUCCESS", payload: userPayload });
+      dispatch({ type: "LOGIN_SUCCESS", payload: { user, accessToken } });
       navigate("/");
     } catch (err) {
       const payload = err?.data ?? { message: "Login failed" };
@@ -79,13 +68,18 @@ const Login = () => {
         </div>
 
         <form className="auth__form" onSubmit={handleSubmit}>
+          {sessionMessage && (
+            <div className="auth__notice" role="status">
+              {sessionMessage}
+            </div>
+          )}
           <div className="auth__field">
-            <label htmlFor="username">Username</label>
+            <label htmlFor="identifier">Username, email, or phone</label>
             <input
-              id="username"
+              id="identifier"
               type="text"
-              placeholder="Enter your username"
-              value={credentials.username}
+              placeholder="Enter your username, email, or phone number"
+              value={credentials.identifier}
               onChange={handleChange}
               required
               autoComplete="username"

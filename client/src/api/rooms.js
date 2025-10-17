@@ -18,9 +18,7 @@ export const uploadRoomImage = (file) => {
   formData.append("image", file);
 
   return apiClient
-    .post("/upload/rooms", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    })
+    .post("/upload/rooms", formData)
     .then((response) => response.data?.url || response.data?.secure_url || response.data);
 };
 

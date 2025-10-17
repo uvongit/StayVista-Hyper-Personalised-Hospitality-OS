@@ -1,12 +1,11 @@
-/* ============================================
-   Modern Professional Navbar - Premium Styling
-   ============================================ */
 
 .navbar {
   --navbar-height: 78px;
+  --navbar-z-index: 980;
+  --navbar-overlay-z-index: 986;
   position: sticky;
   top: 0;
-  z-index: 9999;
+  z-index: var(--navbar-z-index);
   background: #ffffff;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -158,7 +157,6 @@
   gap: 1.25rem;
   flex: 1 1 auto;
   min-width: 0;
-  z-index: 10050;
 }
 
 .navbar__links {
@@ -457,7 +455,7 @@
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
   padding: 0.5rem;
-  z-index: 10100;
+  z-index: var(--navbar-overlay-z-index);
   animation: slideDown 0.2s ease;
 }
 
@@ -534,7 +532,7 @@
 .navbar__user-menu-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 10025;
+  z-index: calc(var(--navbar-z-index) - 4);
 }
 
 /* Mobile User Section */
@@ -565,7 +563,7 @@
   background: transparent;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  z-index: 10040;
+  z-index: calc(var(--navbar-z-index) - 2);
 }
 /* Responsive Design */
 @media (max-width: 1024px) {

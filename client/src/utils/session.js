@@ -1,14 +1,41 @@
+import { clearAuth } from "./authStorage";
+
 let hasRedirected = false;
 
-export const handleSessionExpiry = () => {
+const SESSION_MESSAGE_KEY = "stayvista:sessionMessage";
+const DEFAULT_EXPIRY_MESSAGE = "Your session has ended. Please sign in again.";
+
+const storeSessionMessage = (message) => {
+  const normalizedMessage =
+    typeof message === "string" && message.trim().length > 0 ? message.trim() : DEFAULT_EXPIRY_MESSAGE;
+
+  try {
+    sessionStorage.setItem(SESSION_MESSAGE_KEY, normalizedMessage);
+  } catch (err) {
+    console.error("Failed to persist session message", err);
+  }
+};
+
+export const consumeSessionMessage = () => {
+  try {
+    const message = sessionStorage.getItem(SESSION_MESSAGE_KEY);
+    if (message) {
+      sessionStorage.removeItem(SESSION_MESSAGE_KEY);
+      return message;
+    }
+  } catch (err) {
+    console.error("Failed to read session message", err);
+  }
+  return null;
+};
+
+export const handleSessionExpiry = (message) => {
   if (hasRedirected) return;
   hasRedirected = true;
 
-  try {
-    localStorage.removeItem("user");
-  } catch (err) {
-    console.error("Failed to clear session cache", err);
-  }
+  storeSessionMessage(message);
+
+  clearAuth();
 
   if (window.location.pathname !== "/login") {
     window.location.replace("/login");

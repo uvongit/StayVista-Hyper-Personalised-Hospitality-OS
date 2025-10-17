@@ -1,10 +1,37 @@
 import DriveFolderUploadOutlinedIcon from "@mui/icons-material/DriveFolderUploadOutlined";
 import { useEffect, useMemo, useState } from "react";
-import { roomInputs } from "../../formSource.js";
 import { createRoom, fetchCollection, uploadRoomImage } from "../../api/services.js";
+import { extractApiErrorMessage } from "../../utils/error.js";
 
 const MAX_ROOM_IMAGES = 6;
 const FALLBACK_ROOM_IMAGE = "https://icon-library.com/images/no-image-icon/no-image-icon-0.jpg";
+
+const ROOM_INPUTS = [
+  {
+    id: "title",
+    label: "Title",
+    type: "text",
+    placeholder: "Deluxe Queen with Balcony",
+  },
+  {
+    id: "desc",
+    label: "Description",
+    type: "text",
+    placeholder: "28 m² suite • queen bed • ensuite • skyline view",
+  },
+  {
+    id: "price",
+    label: "Price",
+    type: "number",
+    placeholder: "8999",
+  },
+  {
+    id: "maxPeople",
+    label: "Max People",
+    type: "number",
+    placeholder: "3",
+  },
+];
 
 const ROOM_FIELD_SECTIONS = [
   {
@@ -19,7 +46,7 @@ const ROOM_FIELD_SECTIONS = [
   },
 ];
 
-const ROOM_INPUT_MAP = roomInputs.reduce((acc, input) => {
+const ROOM_INPUT_MAP = ROOM_INPUTS.reduce((acc, input) => {
   acc[input.id] = input;
   return acc;
 }, {});
@@ -52,7 +79,7 @@ const NewRoom = () => {
         setHotelOptions(Array.isArray(data) ? data : []);
         setHotelsError("");
       } catch (err) {
-        setHotelsError(err?.response?.data?.message || err?.message || "Failed to load hotels");
+        setHotelsError(extractApiErrorMessage(err, "Failed to load hotels"));
         setHotelOptions([]);
       } finally {
         setHotelsLoading(false);
@@ -155,7 +182,15 @@ const NewRoom = () => {
 
       let uploadedPhotos = [];
       if (files.length) {
-        const uploads = await Promise.all(files.map((file) => uploadRoomImage(file)));
+        const uploads = await Promise.all(
+          files.map(async (file) => {
+            try {
+              return await uploadRoomImage(file);
+            } catch (err) {
+              throw new Error(extractApiErrorMessage(err, "Image upload failed"));
+            }
+          })
+        );
         uploadedPhotos = uploads.filter(Boolean).slice(0, MAX_ROOM_IMAGES);
       }
 
@@ -177,7 +212,7 @@ const NewRoom = () => {
       setPreviewUrls([]);
       setImageFeedback("");
     } catch (err) {
-      setSubmitError(err?.response?.data?.message || err?.message || "Failed to create room");
+      setSubmitError(extractApiErrorMessage(err, "Failed to create room"));
       setSubmitSuccess("");
     } finally {
       setSubmitting(false);

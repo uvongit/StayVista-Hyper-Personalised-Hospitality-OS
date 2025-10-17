@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/footer/Footer";
@@ -26,18 +26,29 @@ const formatCurrency = (value) =>
     : "—";
 
 const Transactions = () => {
-  const [transactions, setTransactions] = useState([]);
+  const [todayTransactions, setTodayTransactions] = useState([]);
+  const [allTransactions, setAllTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showAll, setShowAll] = useState(false);
 
   const loadTransactions = async () => {
     setLoading(true);
     setError("");
     try {
-      const data = await getTransactions();
-      setTransactions(Array.isArray(data) ? data : []);
+      const [todayData, allData] = await Promise.all([
+        getTransactions({
+          from: dayjs().startOf("day").toISOString(),
+          to: dayjs().endOf("day").toISOString(),
+        }),
+        getTransactions(),
+      ]);
+      setTodayTransactions(Array.isArray(todayData) ? todayData : []);
+      setAllTransactions(Array.isArray(allData) ? allData : []);
     } catch (err) {
       setError(err?.response?.data?.message || err?.message || "Failed to load transactions");
+      setTodayTransactions([]);
+      setAllTransactions([]);
     } finally {
       setLoading(false);
     }
@@ -46,6 +57,38 @@ const Transactions = () => {
   useEffect(() => {
     loadTransactions();
   }, []);
+
+  const displayedTransactions = useMemo(() => {
+    if (showAll || todayTransactions.length === 0) {
+      return allTransactions;
+    }
+    return todayTransactions;
+  }, [showAll, todayTransactions, allTransactions]);
+
+  const monthlySummary = useMemo(() => {
+    const currentMonthTransactions = allTransactions.filter((txn) =>
+      dayjs(txn.createdAt).isSame(dayjs(), "month")
+    );
+
+    const capturedStatuses = new Set(["captured", "approved", "completed"]);
+    const monthlyEarnings = currentMonthTransactions.reduce((total, txn) => {
+      if (!capturedStatuses.has((txn.status || "").toLowerCase())) {
+        return total;
+      }
+      const amount = typeof txn.amount === "number" ? txn.amount : Number(txn.amount);
+      return Number.isFinite(amount) ? total + amount : total;
+    }, 0);
+
+    return {
+      earnings: monthlyEarnings,
+      count: currentMonthTransactions.length,
+    };
+  }, [allTransactions]);
+
+  const hasPrevious = useMemo(
+    () => allTransactions.some((txn) => !dayjs(txn.createdAt).isSame(dayjs(), "day")),
+    [allTransactions]
+  );
 
   return (
     <div className="transactions-page">
@@ -63,15 +106,28 @@ const Transactions = () => {
 
         {error && <div className="transactions-error">{error}</div>}
 
+        <section className="transactions-metrics" aria-label="Monthly expenditure summary">
+          <article className="metric-card">
+            <h2>Monthly expenditure</h2>
+            <p className="metric-value">{formatCurrency(monthlySummary.earnings)}</p>
+            <p className="metric-caption">Amount you've paid this month</p>
+          </article>
+          <article className="metric-card">
+            <h2>Transactions this month</h2>
+            <p className="metric-value">{monthlySummary.count}</p>
+            <p className="metric-caption">Includes all payment activity</p>
+          </article>
+        </section>
+
         <section className="transactions-list">
-          {loading && transactions.length === 0 && <div className="loading">Loading transactions…</div>}
-          {!loading && transactions.length === 0 && (
+          {loading && displayedTransactions.length === 0 && <div className="loading">Loading transactions…</div>}
+          {!loading && displayedTransactions.length === 0 && (
             <div className="empty-state">
               <h3>No transactions yet</h3>
               <p>Your future booking payments will appear here.</p>
             </div>
           )}
-          {transactions.map((txn) => (
+          {displayedTransactions.map((txn) => (
             <article className="transaction-card" key={txn._id}>
               <div className="transaction-card__header">
                 <div>
@@ -118,6 +174,18 @@ const Transactions = () => {
             </article>
           ))}
         </section>
+
+        {hasPrevious && (
+          <div className="transactions-load-more">
+            <button
+              type="button"
+              onClick={() => setShowAll((prev) => !prev)}
+              className="load-more-button"
+            >
+              {showAll ? "Show today's transactions" : "Load previous transactions"}
+            </button>
+          </div>
+        )}
       </main>
       <Footer />
     </div>

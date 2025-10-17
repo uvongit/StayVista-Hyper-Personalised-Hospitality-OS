@@ -1,10 +1,13 @@
 import { useContext, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext.js";
 import { login } from "../../api/services.js";
+import { consumeSessionMessage } from "../../utils/session.js";
+import { extractApiErrorMessage } from "../../utils/error.js";
 
 const Login = () => {
-  const [credentials, setCredentials] = useState({ username: "", password: "" });
+  const [credentials, setCredentials] = useState({ identifier: "", password: "" });
+  const [sessionMessage] = useState(() => consumeSessionMessage());
   const { loading, error, dispatch } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -17,21 +20,43 @@ const Login = () => {
     event.preventDefault();
     dispatch({ type: "LOGIN_START" });
     try {
-      const data = await login(credentials);
-      const userDetails = data?.details;
-      if (userDetails?.superAdmin) {
-        dispatch({ type: "LOGIN_SUCCESS", payload: userDetails });
-        navigate("/");
+      const trimmed = credentials.identifier.trim();
+      let payload;
+
+      if (trimmed.includes("@")) {
+        payload = { email: trimmed, password: credentials.password };
+      } else if (/\d/.test(trimmed)) {
+        const sanitizedPhone = trimmed.replace(/[\s()-]/g, "").replace(/^(\+)?0+(?=\d)/, "$1");
+        payload = { phone: sanitizedPhone, password: credentials.password };
       } else {
+        payload = { username: trimmed, password: credentials.password };
+      }
+
+      const data = await login(payload);
+
+      const user = data?.user ?? null;
+      const accessToken = data?.accessToken ?? null;
+
+      if (!user || !accessToken) {
+        throw new Error("Login response is missing authentication details.");
+      }
+
+      if (!user.superAdmin) {
         dispatch({
           type: "LOGIN_FAILURE",
           payload: { message: "Only superadmins may access the admin panel." },
         });
+        return;
       }
+
+      dispatch({ type: "LOGIN_SUCCESS", payload: { user, accessToken } });
+      navigate("/");
     } catch (err) {
+      const message = extractApiErrorMessage(err, "Login failed");
+      setCredentials((prev) => ({ ...prev, password: "" }));
       dispatch({
         type: "LOGIN_FAILURE",
-        payload: err?.response?.data || { message: "Login failed" },
+        payload: { message },
       });
     }
   };
@@ -47,19 +72,24 @@ const Login = () => {
         </header>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {sessionMessage && (
+            <div className="rounded-lg border border-primary/20 bg-primary/10 px-4 py-3 text-sm font-medium text-primary">
+              {sessionMessage}
+            </div>
+          )}
           <div className="space-y-4">
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-text-secondary dark:text-dark-text-secondary">
-                Username
+                Username, email, or phone
               </span>
               <input
-                id="username"
+                id="identifier"
                 type="text"
-                value={credentials.username}
+                value={credentials.identifier}
                 onChange={handleChange}
                 required
                 className="w-full rounded-lg border border-border bg-white px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-dark-border dark:bg-dark-background dark:text-dark-text-primary"
-                placeholder="super.admin"
+                placeholder="super.admin, admin@example.com, or +1 415 555 0123"
               />
             </label>
 
@@ -93,13 +123,6 @@ const Login = () => {
             {error.message}
           </div>
         )}
-
-        <div className="flex items-center justify-center gap-2 text-sm text-text-muted dark:text-dark-text-muted">
-          <span>Don&apos;t have an account?</span>
-          <Link to="/register" className="font-medium text-primary transition hover:text-primary-dark">
-            Register
-          </Link>
-        </div>
       </div>
     </div>
   );

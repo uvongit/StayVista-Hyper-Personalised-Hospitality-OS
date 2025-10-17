@@ -2,6 +2,8 @@ import "./navbar.css";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useContext, useState, useEffect, useRef } from "react";
 import { AuthContext } from "../../context/AuthContext";
+import { logout as logoutRequest } from "../../api/auth";
+import { clearAuth } from "../../utils/authStorage";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBars,
@@ -21,6 +23,7 @@ import {
 const Navbar = () => {
   const { user, dispatch } = useContext(AuthContext);
   const isAdmin = Boolean(user?.isAdmin);
+  const userRoleLabel = isAdmin ? "Administrator" : "Member";
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -64,11 +67,17 @@ const Navbar = () => {
   const closeUserMenu = () => setShowUserMenu(false);
   const toggleUserMenu = () => setShowUserMenu((prev) => !prev);
 
-  const handleLogout = () => {
-    dispatch({ type: "LOGOUT" });
-    localStorage.removeItem("user");
-    navigate("/login", { replace: true });
-    setShowUserMenu(false);
+  const handleLogout = async () => {
+    try {
+      await logoutRequest();
+    } catch (err) {
+      console.error("Failed to terminate session remotely", err);
+    } finally {
+      clearAuth();
+      dispatch({ type: "LOGOUT" });
+      navigate("/login", { replace: true });
+      setShowUserMenu(false);
+    }
   };
 
   const toggleMenu = () => {
@@ -175,7 +184,7 @@ const Navbar = () => {
                     </div>
                     <div className="navbar__user-info">
                       <span className="navbar__user-name">{user.username}</span>
-                      <span className="navbar__user-role">Administrator</span>
+                      <span className="navbar__user-role">{userRoleLabel}</span>
                     </div>
                   </div>
                   <button
@@ -206,7 +215,7 @@ const Navbar = () => {
                 <div className="navbar__user-avatar">{user.username?.[0]?.toUpperCase()}</div>
                 <div className="navbar__user-info">
                   <span className="navbar__user-name">{user.username}</span>
-                  <span className="navbar__user-role">Administrator</span>
+                  <span className="navbar__user-role">{userRoleLabel}</span>
                 </div>
                 <FontAwesomeIcon
                   icon={faChevronDown}
@@ -220,7 +229,7 @@ const Navbar = () => {
                       <div className="navbar__user-menu-avatar">{user.username?.[0]?.toUpperCase()}</div>
                       <div>
                         <div className="navbar__user-menu-name">{user.username}</div>
-                        <div className="navbar__user-menu-email">{user.email || "Administrator"}</div>
+                        <div className="navbar__user-menu-email">{user.email || userRoleLabel}</div>
                       </div>
                     </div>
                     <div className="navbar__user-menu-divider"></div>
@@ -340,7 +349,7 @@ const Navbar = () => {
                   </div>
                   <div className="navbar__user-info">
                     <span className="navbar__user-name">{user.username}</span>
-                    <span className="navbar__user-role">Member</span>
+                    <span className="navbar__user-role">{userRoleLabel}</span>
                   </div>
                 </div>
                 <button
@@ -386,7 +395,7 @@ const Navbar = () => {
             </div>
             <div className="navbar__user-info">
               <span className="navbar__user-name">{user.username}</span>
-              <span className="navbar__user-role">Administrator</span>
+              <span className="navbar__user-role">{userRoleLabel}</span>
             </div>
             <button
               className="navbar__logout"

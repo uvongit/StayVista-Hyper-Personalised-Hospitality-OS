@@ -11,19 +11,24 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-success.svg)](https://www.mongodb.com/atlas)
 [![Express.js](https://img.shields.io/badge/Express.js-4.18-lightgrey.svg)](https://expressjs.com/)
 [![Material UI](https://img.shields.io/badge/MUI-7.x-purple.svg)](https://mui.com/)
+[![Vite](https://img.shields.io/badge/Vite-5.x-646cff.svg)](https://vitejs.dev/)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind-3.x-38bdf8.svg)](https://tailwindcss.com/)
+[![Cloudinary](https://img.shields.io/badge/Cloudinary-CDN-blue.svg)](https://cloudinary.com/)
 
-[Project Story](#-vision--brand) • [Feature Map](#-platform-capabilities) • [Quick Start](#-quick-start) • [Architecture](#-solution-architecture)
+[Project Story](#-vision--brand) • [Feature Map](#-platform-capabilities) • [Quick Start](#-quick-start) • [Architecture](#-solution-architecture) • [DX Toolkit](#-developer-experience-toolkit) • [Deployments](#-deployment-playbook)
 
 </div>
 
 ---
 
-## 📌 TL;DR
+## 📌 Overview
 
 - **Luxury guest web app (`client/`)** with curated collections, concierge storytelling, and seamless bookings.
 - **Next-gen admin workspace (`admin_v2.0/`)** delivering live revenue telemetry, transaction intelligence, and portfolio management.
 - **Legacy dashboard (`admin_v1.0/`)** retained for teams migrating gradually.
 - **Modular Express API (`api/`)** with hardened middleware, analytics aggregations, and Cloudinary-powered media ops.
+
+> **What’s new?** Transaction health dashboards, inline analytics summaries, enriched single-resource views, and consistent error messaging across login and invitation flows.
 
 ---
 
@@ -39,6 +44,8 @@
 - **[API Surface](#-api-surface)**
 - **[Security & Reliability](#-security--reliability)**
 - **[Performance Toolkit](#-performance-toolkit)**
+- **[Developer Experience Toolkit](#-developer-experience-toolkit)**
+- **[Deployment Playbook](#-deployment-playbook)**
 - **[Contributing](#-contributing)**
 - **[License & Credits](#-license--credits)**
 
@@ -58,15 +65,16 @@ StayVista is built for hospitality teams who obsess over ritual-driven guest exp
 
 - **Guest Experience OS**
   - Editorial discovery galleries, lifestyle collections, and dynamic availability (`client/`).
-  - Secure booking pipeline backed by real-time room statuses and transaction history.
+  - Secure booking pipeline backed by real-time room statuses, transaction history, and improved signup affordances (see `client/src/pages/register/Register.jsx`).
 - **Operations Control Tower**
-  - `admin_v2.0/` surfaces instant KPIs, booking funnels, and transaction health (`admin_v2.0/src/pages/stats/Stats.jsx`).
-  - Role-aware workflows for hotel admins, super admins, and concierge teams.
+  - `admin_v2.0/` surfaces instant KPIs, booking funnels, transaction health, and enriched single-record management (`admin_v2.0/src/pages/single/Single.jsx`).
+  - Role-aware workflows for hotel admins, super admins, and concierge teams with refined invite flows and adaptive error messaging (`admin_v2.0/src/pages/new/New.jsx`, `admin_v2.0/src/pages/login/Login.jsx`).
 - **Revenue Intelligence**
   - Aggregated analytics via `/api/analytics/summary` combine bookings, transactions, and performance baselines (`api/controllers/analytics.controller.js`).
-  - Automated classification of booking and payment states for accurate dashboards (`admin_v2.0/src/pages/stats/Stats.jsx`).
+  - Automated classification of booking and payment states for accurate dashboards and transaction normalization (`admin_v2.0/src/pages/transactions/Transactions.jsx`).
 - **Media & Content Engine**
   - Cloudinary-backed uploads for hotels and rooms with curated asset guidelines (`api/routes/uploads.routes.js`).
+  - Inline gallery management and availability mapping for rooms (`admin_v2.0/src/pages/single/Single.jsx`).
 
 ---
 
@@ -180,10 +188,12 @@ npm run dev          # CRA dev server on http://localhost:3001
 - **Guest Web Application (`client/`)**
   - Immersive hero experiences, lifestyle-based property curation, property grids, editorial storytelling, and responsive design.
   - Booking flow integrates real-time availability, rate filters, and transaction history views.
+  - Signup and onboarding tuned with consistent form placeholders and validation hints (`client/src/pages/register/Register.jsx`).
 - **Admin Workspace v2 (`admin_v2.0/`)**
   - Protected routes via `AuthContext` (`admin_v2.0/src/App.jsx`).
   - Advanced stats: daily revenue, booking mix, transaction health, and 6-month revenue trends.
-  - Data toolbelt with logs, bookings, transactions, hotels, rooms, and user management panels.
+  - Data toolbelt with logs, bookings, transactions, hotels, rooms, and user management panels, plus deep single-resource editing experiences (`admin_v2.0/src/pages/single/Single.jsx`).
+  - Consistent error extraction and login safeguards using `extractApiErrorMessage()` (`admin_v2.0/src/pages/login/Login.jsx`).
 - **Admin Dashboard v1 (`admin_v1.0/`)**
   - Original Material UI + SASS dashboard; preserved for teams that still rely on legacy workflows.
 - **API Service (`api/`)**
@@ -207,6 +217,8 @@ npm run dev          # CRA dev server on http://localhost:3001
 - **Analytics**
   - `GET /api/analytics/summary` consolidates user, hotel, booking, transaction, and revenue streams.
 
+> See `admin_v2.0/src/pages/transactions/Transactions.jsx` for the latest row normalization logic powering resilient dashboards.
+
 ---
 
 ## 🛡️ Security & Reliability
@@ -217,6 +229,8 @@ npm run dev          # CRA dev server on http://localhost:3001
 - CORS configuration tuned per client/admin domain via `CLIENT_URL` and `ADMIN_URL` env keys.
 - Graceful MongoDB connection handling with disconnect resilience.
 
+> Authentication flows leverage trimmed and sanitized identifiers, ensuring safe login experiences across email, phone, and username inputs (`admin_v2.0/src/pages/login/Login.jsx`).
+
 ---
 
 ## ⚙️ Performance Toolkit
@@ -225,6 +239,50 @@ npm run dev          # CRA dev server on http://localhost:3001
 - Cloudinary transformations for responsive image delivery.
 - Indexed MongoDB collections with aggregation pipelines for analytics.
 - Vite-driven HMR (admin v2) and minimal bundles for runtime efficiency.
+
+> Transaction grids debounce re-rendering through memoized column definitions and height virtualization, keeping KPI tables fluid under load (`admin_v2.0/src/pages/transactions/Transactions.jsx`).
+
+---
+
+## 🧑‍💻 Developer Experience Toolkit
+
+- **Linting & Formatting**
+  - Admin workspace: `npm run lint` (ESLint flat config in `admin_v2.0/eslint.config.js`).
+  - Auto-fix: `npm run lint -- --fix` for rapid hygiene passes.
+  - Prettier formatting aligned across modules; configure editors to respect `.editorconfig`.
+- **Testing & Validation**
+  - Targeted integration via Postman collections (`api/collections/`) or Thunder Client.
+  - Manual smoke tests: login, invite user, create hotel, create room, capture transaction.
+- **Debugging helpers**
+  - `extractApiErrorMessage()` centralizes API error parsing (`admin_v2.0/src/utils/error.js`).
+  - Session messaging utilities (`admin_v2.0/src/utils/session.js`) preserve toasts across redirects.
+- **Recommended VS Code Extensions**
+  - ESLint, Tailwind CSS IntelliSense, GitLens, Thunder Client, and REST Client for API exploration.
+- **Scripts Recap**
+  - `npm run dev` → Vite dev server with fast HMR.
+  - `npm run build` → Production bundle, outputs to `dist/`.
+  - `npm run preview` → Local preview of production build.
+
+---
+
+## 🚀 Deployment Playbook
+
+- **API (`api/`)**
+  - Target Node 18+ environment (Render, Railway, or AWS Elastic Beanstalk).
+  - Configure environment variables: `MONGO_URI`, `JWT_SECRET`, `CLIENT_URL`, `ADMIN_URL`, `CLOUDINARY_*` keys.
+  - Enable automated backups for MongoDB Atlas; leverage Vercel/Netlify edge for web caching.
+- **Admin v2 (`admin_v2.0/`)**
+  - Build with `npm run build`; deploy `dist/` to Vercel, Netlify, or Cloudflare Pages.
+  - Set `VITE_API_BASE_URL` to the API origin. Use environment-specific values for staging/production.
+  - Consider password-protecting staging environments via edge middleware.
+- **Client (`client/`)**
+  - CRA-style build (`npm run build`) deployable to Netlify, Vercel, or static S3 hosting.
+  - Ensure `REACT_APP_API_URL` aligns with API base and includes HTTPS.
+- **Legacy Admin (`admin_v1.0/`)**
+  - Optional deployment for teams needing the historical experience; treat as maintenance mode.
+- **Observability**
+  - Recommend integrating Logtail/DataDog for API logs, Vercel Analytics for frontend, and MongoDB Atlas metrics.
+  - Configure uptime checks for `/api/health` and `/api/analytics/summary` endpoints.
 
 ---
 

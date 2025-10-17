@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { deleteResource, fetchCollection } from "../../api/services.js";
+import { AuthContext } from "../../context/AuthContext.js";
+import { extractApiErrorMessage } from "../../utils/error.js";
 
 const ROLE_GROUPS = [
   {
@@ -17,6 +19,7 @@ const ROLE_GROUPS = [
 ];
 
 const UsersManagement = () => {
+  const { user: authUser } = useContext(AuthContext);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -33,7 +36,7 @@ const UsersManagement = () => {
         setUsers(Array.isArray(response) ? response : []);
         setToast(null);
       } catch (err) {
-        setError(err?.response?.data?.message || err?.message || "Failed to load users");
+        setError(extractApiErrorMessage(err, "Failed to load users"));
       } finally {
         setLoading(false);
       }
@@ -64,7 +67,7 @@ const UsersManagement = () => {
       setUsers((prev) => prev.filter((item) => item._id !== user._id));
       setToast({ type: "success", message: `${username || "User"} deleted successfully.`, role: resolveRoleKey(user) });
     } catch (err) {
-      const message = err?.response?.data?.message || err?.message || "Failed to delete user.";
+      const message = extractApiErrorMessage(err, "Failed to delete user.");
       setToast({ type: "error", message });
     }
   };
@@ -112,13 +115,25 @@ const UsersManagement = () => {
 
   const hasResults = filteredUsers.length > 0;
 
+  const canInvite = Boolean(authUser?.superAdmin);
+
   return (
     <div className="space-y-8">
-      <header className="rounded-2xl border border-border bg-surface p-8 shadow-soft dark:border-dark-border dark:bg-dark-surface">
-        <h1 className="text-3xl font-semibold text-text-primary dark:text-dark-text-primary">User access control</h1>
-        <p className="mt-2 text-sm text-text-muted dark:text-dark-text-muted">
-          Review, filter, and manage accounts by role. Open any user to adjust permissions or reset credentials.
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-border bg-surface p-8 shadow-soft dark:border-dark-border dark:bg-dark-surface">
+        <div>
+          <h1 className="text-3xl font-semibold text-text-primary dark:text-dark-text-primary">User access control</h1>
+          <p className="mt-2 max-w-2xl text-sm text-text-muted dark:text-dark-text-muted">
+            Review, filter, and manage accounts by role. Open any user to adjust permissions or reset credentials.
+          </p>
+        </div>
+        {canInvite && (
+          <Link
+            to="/users/new"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-dark"
+          >
+            Invite user
+          </Link>
+        )}
       </header>
 
       {toast?.type === "error" && (

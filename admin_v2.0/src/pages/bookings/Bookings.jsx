@@ -9,6 +9,8 @@ import Paper from "@mui/material/Paper";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { deleteResource, fetchBookings, updateBookingStatus } from "../../api/services.js";
+import { extractApiErrorMessage } from "../../utils/error.js";
+import useWindowSize from "../../hooks/useWindowSize.js";
 
 dayjs.extend(relativeTime);
 
@@ -207,6 +209,11 @@ const Bookings = () => {
   const [error, setError] = useState("");
   const [updating, setUpdating] = useState(false);
   const [deletingId, setDeletingId] = useState("");
+  const [timeFilter, setTimeFilter] = useState("all");
+
+  const { width } = useWindowSize();
+  const viewportWidth = width || 0;
+  const isMobileView = viewportWidth < 768;
 
   const loadBookings = useCallback(async () => {
     setLoading(true);
@@ -218,7 +225,7 @@ const Bookings = () => {
         .filter(Boolean);
       setBookings(normalized);
     } catch (err) {
-      setError(err?.response?.data?.message || err?.message || "Failed to fetch bookings");
+      setError(extractApiErrorMessage(err, "Failed to fetch bookings"));
     } finally {
       setLoading(false);
     }
@@ -240,7 +247,7 @@ const Bookings = () => {
       }
       setBookings((prev) => prev.map((booking) => (booking.id === bookingId ? nextPayload : booking)));
     } catch (err) {
-      setError(err?.response?.data?.message || err?.message || "Failed to update booking status");
+      setError(extractApiErrorMessage(err, "Failed to update booking status"));
     } finally {
       setUpdating(false);
     }
@@ -258,7 +265,7 @@ const Bookings = () => {
         await deleteResource("bookings", bookingId);
         setBookings((prev) => prev.filter((booking) => booking.id !== bookingId));
       } catch (err) {
-        setError(err?.response?.data?.message || err?.message || "Failed to delete booking");
+        setError(extractApiErrorMessage(err, "Failed to delete booking"));
       } finally {
         setDeletingId("");
       }
@@ -266,9 +273,44 @@ const Bookings = () => {
     []
   );
 
+  const { todayBookings, previousBookings } = useMemo(() => {
+    const todayStart = dayjs().startOf("day");
+    const todayList = [];
+    const previousList = [];
+
+    bookings.forEach((booking) => {
+      const created = booking?.createdDate;
+      if (created && created.isSame(todayStart, "day")) {
+        todayList.push(booking);
+      } else {
+        previousList.push(booking);
+      }
+    });
+
+    return { todayBookings: todayList, previousBookings: previousList };
+  }, [bookings]);
+
+  const displayedBookings = useMemo(() => {
+    if (timeFilter === "today") return todayBookings;
+    if (timeFilter === "previous") return previousBookings;
+    return bookings;
+  }, [timeFilter, todayBookings, previousBookings, bookings]);
+
+  const bookingCounts = {
+    today: todayBookings.length,
+    previous: previousBookings.length,
+    all: bookings.length,
+  };
+
+  const bookingFilterOptions = [
+    { key: "today", label: "Today", count: bookingCounts.today },
+    { key: "previous", label: "Earlier", count: bookingCounts.previous },
+    { key: "all", label: "All", count: bookingCounts.all },
+  ];
+
   const statusCards = useMemo(() => {
-    if (!bookings.length) return [];
-    const total = bookings.length;
+    if (!displayedBookings.length) return [];
+    const total = displayedBookings.length;
     return [
       { key: "pending", label: "Pending" },
       { key: "confirmed", label: "Confirmed" },
@@ -277,7 +319,7 @@ const Bookings = () => {
     ]
       .map((card) => ({
         ...card,
-        count: countStatus(bookings, card.key),
+        count: countStatus(displayedBookings, card.key),
         badgeClass: statusBadgeClass(card.key),
       }))
       .filter(({ count }) => count > 0)
@@ -285,7 +327,7 @@ const Bookings = () => {
         ...card,
         percent: Math.round((card.count / total) * 100),
       }));
-  }, [bookings]);
+  }, [displayedBookings]);
 
   return (
     <div className="space-y-10">
@@ -299,18 +341,45 @@ const Bookings = () => {
             Monitor reservations, adjust statuses in real time, and keep teams aligned across check-ins.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-sm sm:flex-row sm:items-center">
-          <button
-            type="button"
-            className="inline-flex items-center justify-center gap-2 rounded-full border border-border/80 bg-white/70 px-5 py-2.5 font-semibold text-text-secondary shadow-soft transition hover:border-primary hover:bg-primary/10 hover:text-primary dark:border-dark-border/70 dark:bg-dark-surface/70 dark:text-dark-text-secondary"
-            onClick={loadBookings}
-            disabled={loading}
-          >
-            {loading ? "Refreshing…" : "Refresh data"}
-          </button>
-          <span className="text-xs text-text-muted dark:text-dark-text-muted">
-            {bookings.length ? `${bookings.length} records loaded` : "No bookings yet"}
-          </span>
+        <div className="flex flex-col items-stretch gap-4 text-sm sm:items-end">
+          <div className="inline-flex items-center gap-1 overflow-hidden rounded-full border border-border/80 bg-white/60 p-1 font-semibold text-text-secondary shadow-soft dark:border-dark-border/70 dark:bg-dark-surface/60 dark:text-dark-text-secondary">
+            {bookingFilterOptions.map(({ key, label, count }) => {
+              const isActive = timeFilter === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setTimeFilter(key)}
+                  className={`rounded-full px-3 py-1 text-xs transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+                    isActive
+                      ? "bg-primary text-white shadow-soft dark:bg-primary/90"
+                      : "text-text-secondary hover:bg-primary/10 hover:text-primary dark:text-dark-text-secondary dark:hover:bg-primary/15 dark:hover:text-primary"
+                  }`}
+                  aria-pressed={isActive}
+                >
+                  <span>{label}</span>
+                  <span className="ml-1 text-[10px] font-semibold opacity-80">{count}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <button
+              type="button"
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-border/80 bg-white/70 px-5 py-2.5 font-semibold text-text-secondary shadow-soft transition hover:border-primary hover:bg-primary/10 hover:text-primary dark:border-dark-border/70 dark:bg-dark-surface/70 dark:text-dark-text-secondary"
+              onClick={loadBookings}
+              disabled={loading}
+            >
+              {loading ? "Refreshing…" : "Refresh data"}
+            </button>
+            <span className="text-xs text-text-muted dark:text-dark-text-muted">
+              {displayedBookings.length
+                ? `${displayedBookings.length} record${displayedBookings.length === 1 ? "" : "s"} in view • ${bookingCounts.all} total`
+                : bookingCounts.all
+                ? "No bookings in this view"
+                : "No bookings yet"}
+            </span>
+          </div>
         </div>
       </header>
 
@@ -322,7 +391,7 @@ const Bookings = () => {
 
       {statusCards.length > 0 && (
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {statusCards.map(({ key, label, count, percent, badge }) => (
+          {statusCards.map(({ key, label, count, percent, badgeClass }) => (
             <article
               key={key}
               className="rounded-3xl border border-border/60 bg-gradient-to-b from-surface/95 via-surface/80 to-surface/70 p-6 shadow-medium backdrop-blur-xl transition hover:border-primary/50 hover:shadow-medium dark:border-dark-border/60 dark:from-dark-surface/70 dark:via-dark-surface/60 dark:to-dark-surface/50"
@@ -331,7 +400,7 @@ const Bookings = () => {
                 <span className="text-[11px] font-semibold uppercase tracking-[0.28em] text-text-muted dark:text-dark-text-muted">
                   {label}
                 </span>
-                <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${badge}`}>
+                <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${badgeClass}`}>
                   {percent}%
                 </span>
               </header>
@@ -343,23 +412,148 @@ const Bookings = () => {
         </section>
       )}
 
-      <div className="rounded-3xl border border-border/60 bg-surface/80 p-4 shadow-medium backdrop-blur-xl dark:border-dark-border/70 dark:bg-dark-surface/60">
-        <TableContainer
-          component={Paper}
-          className="relative max-w-full overflow-x-auto rounded-[24px] border border-border/40 bg-surface/95 shadow-soft dark:border-dark-border/50 dark:bg-dark-surface/80"
-        >
-          <Table
-            aria-label="bookings table"
-            sx={{
-              width: "100%",
-              tableLayout: "fixed",
-              minWidth: 720,
-              "& .MuiTableCell-root": {
-                whiteSpace: "normal",
-                wordBreak: "break-word",
-              },
-            }}
+      <div className="space-y-6">
+        {isMobileView && (
+          <div className="grid gap-4 md:hidden">
+            {displayedBookings.length === 0 && !loading ? (
+              <div className="rounded-2xl border border-border/50 bg-surface/90 p-6 text-center text-sm text-text-muted dark:border-dark-border/60 dark:bg-dark-surface/80 dark:text-dark-text-muted">
+                No bookings in this view.
+              </div>
+            ) : (
+              displayedBookings.map((booking) => {
+                const bookingId = booking.id || booking.raw?._id;
+                return (
+                  <article
+                    key={bookingId}
+                    className="rounded-3xl border border-border/60 bg-surface/90 p-5 shadow-soft backdrop-blur-xl dark:border-dark-border/60 dark:bg-dark-surface/80"
+                  >
+                    <header className="flex flex-col gap-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="font-mono text-sm font-semibold text-text-primary dark:text-dark-text-primary">
+                          {booking.bookingCode || "—"}
+                        </span>
+                        <span
+                          className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${statusBadgeClass(
+                            booking.status
+                          )}`}
+                        >
+                          {formatStatusLabel(booking.status)}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-text-muted dark:text-dark-text-muted">
+                        <span>{booking.createdLabel || "Created —"}</span>
+                        {booking.createdFromNow && booking.createdFromNow !== "—" && <span>• {booking.createdFromNow}</span>}
+                        {booking.arrivalWindow && <span>• ETA {booking.arrivalWindow}</span>}
+                      </div>
+                    </header>
+                    <dl className="mt-4 grid gap-3 text-xs text-text-muted dark:text-dark-text-muted">
+                      <div className="flex justify-between gap-3">
+                        <dt className="font-semibold uppercase tracking-[0.16em]">Guest</dt>
+                        <dd className="truncate text-text-primary dark:text-dark-text-primary">{booking.guestName || "—"}</dd>
+                      </div>
+                      {booking.guestEmail && (
+                        <div className="flex justify-between gap-3">
+                          <dt className="font-semibold uppercase tracking-[0.16em]">Email</dt>
+                          <dd className="truncate text-text-primary dark:text-dark-text-primary">{booking.guestEmail}</dd>
+                        </div>
+                      )}
+                      {booking.guestPhone && (
+                        <div className="flex justify-between gap-3">
+                          <dt className="font-semibold uppercase tracking-[0.16em]">Phone</dt>
+                          <dd className="font-mono tracking-[0.12em] text-text-primary dark:text-dark-text-primary">
+                            {booking.guestPhone}
+                          </dd>
+                        </div>
+                      )}
+                      <div className="flex justify-between gap-3">
+                        <dt className="font-semibold uppercase tracking-[0.16em]">Stay</dt>
+                        <dd className="text-right text-text-primary dark:text-dark-text-primary">
+                          <div>{booking.stayRange || `${booking.checkInText || "—"} → ${booking.checkOutText || "—"}`}</div>
+                          {booking.nightsLabel && <div>{booking.nightsLabel}</div>}
+                        </dd>
+                      </div>
+                      {booking.hotelName && (
+                        <div className="flex justify-between gap-3">
+                          <dt className="font-semibold uppercase tracking-[0.16em]">Property</dt>
+                          <dd className="truncate text-text-primary dark:text-dark-text-primary">
+                            {booking.hotelName}
+                          </dd>
+                        </div>
+                      )}
+                      {booking.roomsText && booking.roomsText !== "—" && (
+                        <div className="flex justify-between gap-3">
+                          <dt className="font-semibold uppercase tracking-[0.16em]">Rooms</dt>
+                          <dd className="truncate text-text-primary dark:text-dark-text-primary">{booking.roomsText}</dd>
+                        </div>
+                      )}
+                      <div className="flex justify-between gap-3">
+                        <dt className="font-semibold uppercase tracking-[0.16em]">Amount</dt>
+                        <dd className="text-text-primary dark:text-dark-text-primary">{booking.amountDisplay || "—"}</dd>
+                      </div>
+                      {booking.notes && (
+                        <div className="flex justify-between gap-3">
+                          <dt className="font-semibold uppercase tracking-[0.16em]">Notes</dt>
+                          <dd className="truncate text-text-primary dark:text-dark-text-primary">{booking.notes}</dd>
+                        </div>
+                      )}
+                    </dl>
+                    <footer className="mt-5 flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {booking.channel && <span className={CHANNEL_BADGE_CLASS}>{booking.channel}</span>}
+                        {booking.source && booking.source !== booking.channel && (
+                          <span className={SOURCE_BADGE_CLASS}>{booking.source}</span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <select
+                          className="rounded-lg border border-border/50 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-text-primary outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-dark-border/60 dark:bg-dark-surface/70 dark:text-dark-text-primary"
+                          value={booking.status}
+                          onChange={(event) => handleStatusChange(booking.id, event.target.value)}
+                          disabled={updating}
+                          aria-label="Update booking status"
+                        >
+                          {STATUS_OPTIONS.map((option) => (
+                            <option key={option} value={option} className="capitalize">
+                              {option.charAt(0).toUpperCase() + option.slice(1)}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(bookingId)}
+                          disabled={deletingId === bookingId || loading}
+                          className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-danger transition hover:border-danger hover:bg-danger/20 disabled:cursor-not-allowed disabled:opacity-70 dark:border-danger/30 dark:bg-danger/15 dark:text-danger"
+                        >
+                          {deletingId === bookingId ? "Deleting…" : "Delete"}
+                        </button>
+                      </div>
+                    </footer>
+                  </article>
+                );
+              })
+            )}
+          </div>
+        )}
+
+        <div className="rounded-3xl border border-border/60 bg-surface/80 p-4 shadow-medium backdrop-blur-xl dark:border-dark-border/70 dark:bg-dark-surface/60">
+          <TableContainer
+            component={Paper}
+            className={`relative max-w-full overflow-x-auto rounded-[24px] border border-border/40 bg-surface/95 shadow-soft dark:border-dark-border/50 dark:bg-dark-surface/80 ${
+              isMobileView ? "hidden md:block" : ""
+            }`}
           >
+            <Table
+              aria-label="bookings table"
+              sx={{
+                width: "100%",
+                tableLayout: "fixed",
+                minWidth: 720,
+                "& .MuiTableCell-root": {
+                  whiteSpace: "normal",
+                  wordBreak: "break-word",
+                },
+              }}
+            >
               <TableHead className="bg-background/80 dark:bg-dark-background/70">
                 <TableRow>
                   <TableCell className="text-xs font-semibold uppercase tracking-[0.2em] text-text-muted dark:text-dark-text-muted">
@@ -398,14 +592,14 @@ const Bookings = () => {
                       {error}
                     </TableCell>
                   </TableRow>
-                ) : bookings.length === 0 ? (
+                ) : displayedBookings.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center text-sm text-text-muted dark:text-dark-text-muted">
                       No bookings recorded yet.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  bookings.map((row) => {
+                  displayedBookings.map((row) => {
                     const statusLabel = formatStatusLabel(row.status);
                     return (
                       <TableRow
@@ -565,7 +759,8 @@ const Bookings = () => {
                 )}
               </TableBody>
             </Table>
-        </TableContainer>
+          </TableContainer>
+        </div>
       </div>
     </div>
   );

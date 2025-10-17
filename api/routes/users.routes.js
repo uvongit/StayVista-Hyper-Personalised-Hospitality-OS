@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  createUser,
   updateUser,
   deleteUser,
   getUser,
@@ -8,13 +9,16 @@ import {
   updateUserAvatar,
   resetUserPassword,
 } from "../controllers/user.controller.js";
-import { verifyAdmin, verifyToken, verifyUser } from "../utils/auth.middleware.js";
+import { verifyAdmin, verifySuperAdmin, verifyToken, verifyUser } from "../utils/auth.middleware.js";
 
 const router = express.Router();
 
 //AVATAR OPTIONS
 router.get("/assets/avatars", verifyToken, getAvailableAvatars);
 router.put("/:id/avatar", verifyUser, updateUserAvatar);
+
+//CREATE (SUPER ADMIN ONLY)
+router.post("/", verifySuperAdmin, createUser);
 
 //UPDATE
 router.put("/:id", verifyUser, updateUser);

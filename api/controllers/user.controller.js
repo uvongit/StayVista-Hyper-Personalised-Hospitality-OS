@@ -14,6 +14,82 @@ const AVAILABLE_AVATARS = [
   "https://api.dicebear.com/7.x/bottts-neutral/png?seed=Orbit",
 ];
 
+export const createUser = async (req, res, next) => {
+  try {
+    const {
+      username,
+      email,
+      password,
+      phone,
+      country,
+      city,
+      isAdmin = false,
+      superAdmin = false,
+      managedHotel = null,
+      img = "",
+    } = req.body || {};
+
+    const requiredFields = {
+      username,
+      email,
+      password,
+      phone,
+      country,
+      city,
+    };
+
+    const missingEntry = Object.entries(requiredFields).find(([, value]) => {
+      if (value === undefined || value === null) return true;
+      if (typeof value === "string" && value.trim() === "") return true;
+      return false;
+    });
+
+    if (missingEntry) {
+      return next(createError(400, `Field "${missingEntry[0]}" is required.`));
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const normalizedPhone = String(phone).replace(/[\s()-]/g, "").trim();
+    const normalizedUsername = String(username).trim();
+    const normalizedCountry = String(country).trim();
+    const normalizedCity = String(city).trim();
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(String(password), salt);
+
+    let normalizedManagedHotel = null;
+    if (managedHotel) {
+      if (!mongoose.Types.ObjectId.isValid(managedHotel)) {
+        return next(createError(400, "Invalid managed hotel identifier."));
+      }
+      normalizedManagedHotel = new mongoose.Types.ObjectId(managedHotel);
+    }
+
+    const newUser = new User({
+      username: normalizedUsername,
+      email: normalizedEmail,
+      password: hashedPassword,
+      phone: normalizedPhone,
+      country: normalizedCountry,
+      city: normalizedCity,
+      isAdmin: Boolean(isAdmin || superAdmin),
+      superAdmin: Boolean(superAdmin),
+      managedHotel: normalizedManagedHotel,
+      ...(img ? { img } : {}),
+    });
+
+    const savedUser = await newUser.save();
+    const { password: _password, ...otherDetails } = savedUser.toObject();
+    res.status(201).json(otherDetails);
+  } catch (err) {
+    if (err?.code === 11000) {
+      const conflictField = Object.keys(err.keyValue || {})[0] || "credential";
+      return next(createError(409, `Another user already uses that ${conflictField}.`));
+    }
+    next(err);
+  }
+};
+
 export const updateUser = async (req, res, next) => {
   try {
     const payload = { ...req.body };

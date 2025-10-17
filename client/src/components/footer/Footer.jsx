@@ -71,7 +71,7 @@ const Footer = () => {
             <div className="footer__contact">
               <h3>Concierge desk</h3>
               <p>Speak with our travel designers any time.</p>
-              <span>+1 (415) 555-0123</span>
+              <span>+91 98765 43210</span>
               <span>concierge@stayvista.com</span>
             </div>
             <div className="footer__chips">
@@ -100,6 +100,9 @@ const Footer = () => {
             <span className="footer__badge-item">Global concierge collective</span>
             <span className="footer__badge-item">Forbes Travel Guide Partner</span>
             <span className="footer__badge-item">Carbon-neutral operations</span>
+          </div>
+          <div className="footer__signature" aria-label="Signature">
+            <span className="footer__signature-text">UtkarshV</span>
           </div>
         </section>
       </div>

@@ -18,38 +18,63 @@ const TodaysBookings = () => {
   const isAdmin = Boolean(user?.isAdmin);
   const managedHotelId = user?.managedHotel?.toString?.() || user?.managedHotel || "";
 
-  const [bookings, setBookings] = useState([]);
+  const [todayBookings, setTodayBookings] = useState([]);
+  const [allBookings, setAllBookings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!isAdmin) {
+      setTodayBookings([]);
+      setAllBookings([]);
+      setShowAll(false);
+      return;
+    }
 
-    const fetchTodayBookings = async () => {
+    const loadBookings = async () => {
       setLoading(true);
       setError("");
 
       try {
-        const from = dayjs().startOf("day").toISOString();
-        const to = dayjs().endOf("day").toISOString();
-        const params = { from, to };
+        const baseParams = {};
         if (!user?.superAdmin && managedHotelId) {
-          params.hotelId = managedHotelId;
+          baseParams.hotelId = managedHotelId;
         }
-        const data = await getBookings(params);
-        setBookings(Array.isArray(data) ? data : []);
+
+        const todayParams = {
+          ...baseParams,
+          from: dayjs().startOf("day").toISOString(),
+          to: dayjs().endOf("day").toISOString(),
+        };
+
+        const allParams = Object.keys(baseParams).length ? { ...baseParams } : undefined;
+
+        const [todayData, allData] = await Promise.all([
+          getBookings(todayParams),
+          getBookings(allParams),
+        ]);
+
+        const todayArray = Array.isArray(todayData) ? todayData : [];
+        const allArray = Array.isArray(allData) ? allData : [];
+
+        setTodayBookings(todayArray);
+        setAllBookings(allArray);
+        setShowAll(todayArray.length === 0);
       } catch (err) {
-        setError(err?.message || "Failed to load today's bookings");
+        setError(err?.message || "Failed to load bookings");
+        setTodayBookings([]);
+        setAllBookings([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTodayBookings();
+    loadBookings();
   }, [isAdmin, managedHotelId, user?.superAdmin]);
-
+ 
   const statusSummary = useMemo(() => {
-    return bookings.reduce(
+    return (showAll || todayBookings.length === 0 ? allBookings : todayBookings).reduce(
       (acc, booking) => {
         const key = booking.status || "pending";
         acc[key] = (acc[key] || 0) + 1;
@@ -57,7 +82,39 @@ const TodaysBookings = () => {
       },
       { pending: 0, confirmed: 0, completed: 0, cancelled: 0 }
     );
-  }, [bookings]);
+  }, [showAll, todayBookings, allBookings]);
+
+  const displayedBookings = useMemo(() => {
+    if (showAll || todayBookings.length === 0) {
+      return allBookings;
+    }
+    return todayBookings;
+  }, [showAll, todayBookings, allBookings]);
+
+  const monthlySummary = useMemo(() => {
+    const currentMonthBookings = allBookings.filter((booking) =>
+      dayjs(booking.createdAt).isSame(dayjs(), "month")
+    );
+
+    const monthlyRevenue = currentMonthBookings.reduce((total, booking) => {
+      const amount = typeof booking.totalAmount === "number" ? booking.totalAmount : Number(booking.totalAmount);
+      return Number.isFinite(amount) ? total + amount : total;
+    }, 0);
+
+    return {
+      revenue: monthlyRevenue,
+      count: currentMonthBookings.length,
+    };
+  }, [allBookings]);
+
+  const hasPrevious = useMemo(
+    () => allBookings.some((booking) => !dayjs(booking.createdAt).isSame(dayjs(), "day")),
+    [allBookings]
+  );
+
+  const handleToggle = () => {
+    setShowAll((prev) => !prev);
+  };
 
   if (!isAdmin) {
     return (
@@ -90,6 +147,19 @@ const TodaysBookings = () => {
 
         {error && <div className="form-error">{error}</div>}
 
+        <section className="admin-insights" aria-label="Monthly earnings summary">
+          <article className="admin-insight">
+            <span>Monthly revenue</span>
+            <strong>
+              {monthlySummary.revenue.toLocaleString("en-IN", {
+                style: "currency",
+                currency: "INR",
+                minimumFractionDigits: 0,
+              })}
+            </strong>
+          </article>
+        </section>
+
         <section className="admin-stat-grid">
           {Object.entries(statusSummary).map(([status, count]) => (
             <div className="admin-stat-card" key={status}>
@@ -101,8 +171,8 @@ const TodaysBookings = () => {
 
         <section className="admin-panel">
           <h2>Booking details</h2>
-          {bookings.length === 0 && !loading ? (
-            <p>No bookings recorded today.</p>
+          {displayedBookings.length === 0 && !loading ? (
+            <p>No bookings found.</p>
           ) : (
             <div className="admin-table-wrapper">
               <table className="admin-table">
@@ -117,14 +187,14 @@ const TodaysBookings = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {bookings.map((booking) => (
+                  {displayedBookings.map((booking) => (
                     <tr key={booking._id}>
-                      <td>{booking._id}</td>
-                      <td>{booking.user?.username || "—"}</td>
-                      <td>{booking.hotel?.name || "—"}</td>
-                      <td>{dayjs(booking.createdAt).format("MMM D, YYYY h:mm A")}</td>
-                      <td>{STATUS_LABELS[booking.status] || booking.status || "Pending"}</td>
-                      <td>
+                      <td data-label="Booking">{booking._id}</td>
+                      <td data-label="Guest">{booking.user?.username || "—"}</td>
+                      <td data-label="Hotel">{booking.hotel?.name || "—"}</td>
+                      <td data-label="Created">{dayjs(booking.createdAt).format("MMM D, YYYY h:mm A")}</td>
+                      <td data-label="Status">{STATUS_LABELS[booking.status] || booking.status || "Pending"}</td>
+                      <td data-label="Total">
                         {typeof booking.totalAmount === "number"
                           ? booking.totalAmount.toLocaleString("en-IN", {
                               style: "currency",
@@ -140,6 +210,19 @@ const TodaysBookings = () => {
             </div>
           )}
         </section>
+
+        {hasPrevious && (
+          <div className="admin-panel admin-panel--inline">
+            <button
+              type="button"
+              onClick={handleToggle}
+              className="btn-outline"
+              disabled={loading}
+            >
+              {showAll ? "Show today's bookings" : "Load previous bookings"}
+            </button>
+          </div>
+        )}
       </main>
       <Footer />
     </div>

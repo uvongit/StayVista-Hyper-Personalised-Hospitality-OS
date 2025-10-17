@@ -124,8 +124,14 @@
 }
 
 .fp-card__location::before {
-  content: "📍";
-  font-size: 0.875rem;
+  content: "";
+  width: 0.875rem;
+  height: 0.875rem;
+  display: inline-block;
+  background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 22C12 22 19 14.9558 19 9.75C19 5.60786 15.866 2.5 12 2.5C8.13401 2.5 5 5.60786 5 9.75C5 14.9558 12 22 12 22Z' stroke='%232563EB' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='12' cy='9.75' r='2.25' stroke='%232563EB' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
 }
 
 .fp-card__desc {

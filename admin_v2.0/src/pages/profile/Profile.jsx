@@ -4,6 +4,7 @@ import {
   fetchAvatarOptions,
   updateUserAvatar as updateUserAvatarApi,
 } from "../../api/services.js";
+import { extractApiErrorMessage } from "../../utils/error.js";
 
 const PLACEHOLDER_IMAGE = "https://icon-library.com/images/no-image-icon/no-image-icon-0.jpg";
 
@@ -30,7 +31,7 @@ const Profile = () => {
         const options = await fetchAvatarOptions();
         setAvatars(options);
       } catch (err) {
-        setAvatarError(err?.response?.data?.message || "Failed to load avatar options");
+        setAvatarError(extractApiErrorMessage(err, "Failed to load avatar options"));
       } finally {
         setLoadingAvatars(false);
       }
@@ -55,7 +56,7 @@ const Profile = () => {
       const updated = await updateUserAvatarApi(user._id, selectedAvatar);
       dispatch({ type: "UPDATE_USER", payload: updated });
     } catch (err) {
-      setAvatarError(err?.response?.data?.message || err?.message || "Failed to update avatar");
+      setAvatarError(extractApiErrorMessage(err, "Failed to update avatar"));
     } finally {
       setSaving(false);
     }

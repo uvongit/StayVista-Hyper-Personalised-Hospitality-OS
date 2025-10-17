@@ -57,6 +57,17 @@
   gap: 1.25rem;
 }
 
+.auth__notice {
+  border-radius: var(--radius-md);
+  padding: 0.9rem 1rem;
+  background: rgba(15, 98, 254, 0.1);
+  border: 1px solid rgba(15, 98, 254, 0.2);
+  color: var(--color-primary);
+  font-weight: 500;
+  line-height: 1.45;
+  text-align: center;
+}
+
 .auth__field {
   display: flex;
   flex-direction: column;
